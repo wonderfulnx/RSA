@@ -62,12 +62,12 @@ BigInteger operator + (const BigInteger& a, const BigInteger& b) {
     for (int i = 0; i < len; i++) {
         ans.num[i] += a.num[i] + b.num[i];
         if (ans.num[i] > a.LOW) {
-            ans.num[i + 1] += 1;
+            // do carry only when possible
+            if (i + 1 < a.unit_num) ans.num[i + 1] += 1;
             ans.num[i] = ans.get_low(ans.num[i]);
         }
     }
-    if (ans.num[len]) ans.length = len + 1;
-    else ans.length = len;
+    ans.trim();
     return ans;
 }
 
@@ -81,7 +81,8 @@ BigInteger operator - (const BigInteger& a, const BigInteger& b) {
     for (int i = 0; i < len; i++) {
         ans.num[i] += a.num[i] - b.num[i];
         if (ans.num[i] < 0) {
-            ans.num[i + 1] -= 1;
+            // do carry only when possible
+            if (i + 1 < a.unit_num) ans.num[i + 1] -= 1;
             ans.num[i] += ans.BASE;
         }
     }
@@ -95,10 +96,18 @@ BigInteger operator * (const BigInteger& a, const BigInteger& b) {
 
     int len = min(a.length + b.length, a.unit_num);
     for (int i = 0; i < len; i++) {
+        // every time reaches i, check if carry required, make sure num[i] is lower than BASE
+        if (ans.num[i] > ans.LOW) {
+            if (i + 1 < a.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]); // only if carry is able to take place, we do carry
+            ans.num[i] = ans.get_low(ans.num[i]);
+        }
         for (int j = 0; j <= i; j++) {
+            // start to compute number in num[i].
+            // num[i] is sure to be lower than BASE currently, this += will not cause a overflow
             ans.num[i] += a.num[j] * b.num[i - j];
+            // do the same carry again every time, same as up there
             if (ans.num[i] > ans.LOW) {
-                ans.num[i + 1] += ans.get_hig(ans.num[i]);
+                if (i + 1 < a.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]);
                 ans.num[i] = ans.get_low(ans.num[i]);
             }
         }
