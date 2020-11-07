@@ -5,9 +5,13 @@ using namespace std;
 
 int main()
 {
-    BigInteger a(32, 0xFFFFFFFF);
-//    BigInteger b(32, 0x00010000);
-//    BigInteger c(32, 0xFFFFFFFF);
+    BigInteger a(32, 0x00010001);
+    BigInteger b(32, 0x00010000);
+    BigInteger c(32, 0xFFFFFFFF);
+//    a = a * b;
+    cout << a << " " << endl; cout << a.miller_rabbin(10) << endl;
+//    c.random(a);
+//    cout << c.miller_rabbin(10) << endl;
 
 //    BigInteger c(32);
 //    c = a * b * b + a;
@@ -38,10 +42,6 @@ int main()
 //    cout << (a >> 14) << endl;
 //    cout << (a >> 15) << endl;
 //    cout << (a >> 16) << endl;
-    mt19937 rng;
-    rng.seed(random_device()());
-    uniform_int_distribution<BigInteger::m_uint> u(0, 0xFFFFFFFF);
-    for (int i = 0; i < 10; i++) cout << u(rng) << endl;
 
     return 0;
 }

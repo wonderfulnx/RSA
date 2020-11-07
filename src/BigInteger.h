@@ -72,6 +72,7 @@ public:
 
 private:
     void trim(); // cut leading zeros
+public:
     bool miller_rabbin(int test_time); //miller rabbin test for prime
 
     inline friend bool greater_eq(const BigInteger& a, const BigInteger& b, int last_dg);

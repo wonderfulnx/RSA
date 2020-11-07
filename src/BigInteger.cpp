@@ -3,6 +3,7 @@
 //
 
 #include "BigInteger.h"
+#include <random>
 
 // Int is stored reversed in vector, the lsb is on the head and the msb is on the tail
 
@@ -238,14 +239,20 @@ BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const Bi
         aa = aa * aa % m;
         bb = bb >> 1;
     }
+    res.trim();
     return res;
 }
 
-void BigInteger::random_prime(int unit_n) {
-
+void BigInteger::random(const BigInteger& n) {
+    random_device rd;
+    mt19937 mt(rd());
+    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
+    for (int i = 0; i < n.length; i++) this->num[i] = dist(mt) & LOW;
+    trim();
+    *this = *this % n;
 }
 
-void BigInteger::random(const BigInteger& n) {
+void BigInteger::random_prime(int unit_n) {
 
 }
 
@@ -311,12 +318,27 @@ void div(const BigInteger &a, const BigInteger &b, BigInteger &c, BigInteger &d)
 
 bool BigInteger::miller_rabbin(int test_time) {
     if (*this < 3) return (*this) == 2;
-    BigInteger ONE(this->unit_num, 1); BigInteger TWO(this->unit_num, 1); BigInteger d(*this - ONE);
-    BigInteger::m_uint s = 0;
-    while ((d.num[0] & 1) == 0) d >> 1, s++;
-    // if test time is k, then the error rate is 1/4^(k)
-    for (int i = 0; i < test_time; i++) {
+    BigInteger ONE(this->unit_num, 1);
+    BigInteger TWO(this->unit_num, 2);
+    BigInteger n_1(*this - ONE);
+    BigInteger d(n_1);
+    BigInteger a(this->unit_num);
+    BigInteger x(this->unit_num);
+    int s = 0;
 
+    while ((d.num[0] & 1) == 0) d = d >> 1, s++;
+    // if test time is k, then the error rate is 1/4^(k)
+    for (int i = 0, r; i < test_time; i++) {
+        a.random(*this - TWO); a = a + TWO;
+        x = binpow(a, d, *this);
+        if (x == 1 || x == n_1) continue;
+        for (r = 0; r < s - 1; r++) {
+            x = x * x % (*this);
+            if (x == 1) return false;
+            if (x == n_1) break;
+        }
+        if (r >= s - 1) return false;
     }
+    return true;
 }
 
