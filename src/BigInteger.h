@@ -34,6 +34,7 @@ public:
     BigInteger(const BigInteger& n);
 
     int size() const;
+    bool neg() const;
     BigInteger abs() const;
 
 public:
@@ -45,15 +46,24 @@ public:
     friend BigInteger operator % (const BigInteger& a, const BigInteger& b);
 
     friend bool operator < (const BigInteger& a, const BigInteger& b);
-    friend bool operator > (const BigInteger& a, const BigInteger& b);
-    friend bool operator <= (const BigInteger& a, const BigInteger& b);
-    friend bool operator >= (const BigInteger& a, const BigInteger& b);
-    friend bool operator == (const BigInteger& a, const BigInteger& b);
-    friend bool operator != (const BigInteger& a, const BigInteger& b);
+    friend bool operator <= (const BigInteger& a, const BigInteger& b) { return !(b < a); }
+    friend bool operator > (const BigInteger& a, const BigInteger& b) { return b < a; }
+    friend bool operator >= (const BigInteger& a, const BigInteger& b){ return !(a < b); }
+    friend bool operator == (const BigInteger& a, const BigInteger& b) { return !(a < b) && !(b < a); }
+    friend bool operator != (const BigInteger& a, const BigInteger& b) { return (a < b) || (b < a); }
+
+    friend bool operator < (const BigInteger& a, const m_uint& b);
+    friend bool operator <= (const BigInteger& a, const BigInteger::m_uint &b) { return !(b < a); }
+    friend bool operator >  (const BigInteger& a, const BigInteger::m_uint &b) { return b < a; }
+    friend bool operator >= (const BigInteger& a, const BigInteger::m_uint &b) { return !(a < b); }
+    friend bool operator == (const BigInteger& a, const BigInteger::m_uint &b) { return !(a < b) && !(b < a); }
+    friend bool operator != (const BigInteger& a, const BigInteger::m_uint &b) { return (a < b) || (b < a); }
+
     friend ostream& operator << (ostream& out, const BigInteger& a);
 
 private:
     void trim(); // cut leading zeros
+    bool miller_rabbin(); //miller rabbin test for prime
 };
 
 

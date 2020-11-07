@@ -4,13 +4,11 @@ using namespace std;
 
 int main()
 {
-    BigInteger a(2, 0xFFFFFFFF);
-    BigInteger b(2, 0x00010000);
+    BigInteger a(24, 0xFFFFFFFF);
+    BigInteger b(1, 0x0001);
     BigInteger c(2, 0x0000FFFF);
 
-    BigInteger d = a * b * b * b + a * b + c;
-    cout << d << ", " << d.size() << endl;
-    cout << d*d << endl;
+    cout << (b-a).neg() << " " << b - a << endl;
 
 //    cout << a << endl << a.size() << endl;
 //    cout << b << endl << b.size() << endl;

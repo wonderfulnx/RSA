@@ -45,6 +45,8 @@ BigInteger BigInteger::abs() const {
     return ans;
 }
 
+bool BigInteger::neg() const { return is_neg; }
+
 int BigInteger::size() const { return length; }
 
 BigInteger BigInteger::operator-() const {
@@ -57,13 +59,15 @@ BigInteger BigInteger::operator-() const {
 BigInteger operator + (const BigInteger& a, const BigInteger& b) {
     if (b.is_neg) return a - (-b);
     if (a.is_neg) return b - (-a);
-    BigInteger ans(a.unit_num);
+    BigInteger ans(max(a.unit_num, b.unit_num));
     int len = max(a.length, b.length);
     for (int i = 0; i < len; i++) {
-        ans.num[i] += a.num[i] + b.num[i];
-        if (ans.num[i] > a.LOW) {
+        BigInteger::m_uint aa = (i < a.length)? a.num[i] : 0;
+        BigInteger::m_uint bb = (i < b.length)? b.num[i] : 0;
+        ans.num[i] += aa + bb;
+        if (ans.num[i] > BigInteger::LOW) {
             // do carry only when possible
-            if (i + 1 < a.unit_num) ans.num[i + 1] += 1;
+            if (i + 1 < ans.unit_num) ans.num[i + 1] += 1;
             ans.num[i] = ans.get_low(ans.num[i]);
         }
     }
@@ -76,20 +80,23 @@ BigInteger operator - (const BigInteger& a, const BigInteger& b) {
     if (a.is_neg) return -((-a) + b);
     if (a < b) return -(b - a);
 
-    BigInteger ans(a.unit_num);
+    BigInteger ans(max(a.unit_num, b.unit_num));
     int len = max(a.length, b.length);
     for (int i = 0; i < len; i++) {
-        ans.num[i] += a.num[i] - b.num[i];
+        BigInteger::m_uint aa = (i < a.length)? a.num[i] : 0;
+        BigInteger::m_uint bb = (i < b.length)? b.num[i] : 0;
+        ans.num[i] += aa - bb;
         if (ans.num[i] < 0) {
             // do carry only when possible
-            if (i + 1 < a.unit_num) ans.num[i + 1] -= 1;
-            ans.num[i] += ans.BASE;
+            if (i + 1 < ans.unit_num) ans.num[i + 1] -= 1;
+            ans.num[i] += BigInteger::BASE;
         }
     }
     ans.trim();
     return ans;
 }
 
+// Multiple should only be done when a.unit_num == b.unit_num
 BigInteger operator * (const BigInteger& a, const BigInteger& b) {
     BigInteger ans(a.unit_num);
     ans.is_neg = a.is_neg ^ b.is_neg;
@@ -97,8 +104,8 @@ BigInteger operator * (const BigInteger& a, const BigInteger& b) {
     int len = min(a.length + b.length, a.unit_num);
     for (int i = 0; i < len; i++) {
         // every time reaches i, check if carry required, make sure num[i] is lower than BASE
-        if (ans.num[i] > ans.LOW) {
-            if (i + 1 < a.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]); // only if carry is able to take place, we do carry
+        if (ans.num[i] > BigInteger::LOW) {
+            if (i + 1 < ans.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]); // only if carry is able to take place, we do carry
             ans.num[i] = ans.get_low(ans.num[i]);
         }
         for (int j = 0; j <= i; j++) {
@@ -106,8 +113,8 @@ BigInteger operator * (const BigInteger& a, const BigInteger& b) {
             // num[i] is sure to be lower than BASE currently, this += will not cause a overflow
             ans.num[i] += a.num[j] * b.num[i - j];
             // do the same carry again every time, same as up there
-            if (ans.num[i] > ans.LOW) {
-                if (i + 1 < a.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]);
+            if (ans.num[i] > BigInteger::LOW) {
+                if (i + 1 < ans.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]);
                 ans.num[i] = ans.get_low(ans.num[i]);
             }
         }
@@ -126,7 +133,7 @@ BigInteger operator % (const BigInteger& a, const BigInteger& b) {
 
 bool operator < (const BigInteger& a, const BigInteger& b) {
     if (a.is_neg && !b.is_neg) return true;
-    if (!a.is_neg && a.is_neg) return false;
+    if (!a.is_neg && b.is_neg) return false;
     if (!a.is_neg && !b.is_neg) {
         if (a.length < b.length) return true;
         if (a.length > b.length) return false;
@@ -139,14 +146,20 @@ bool operator < (const BigInteger& a, const BigInteger& b) {
     else return -b < -a;
 }
 
-bool operator <= (const BigInteger& a, const BigInteger& b) { return !(b < a); }
-bool operator > (const BigInteger& a, const BigInteger& b) { return b < a; }
-bool operator >= (const BigInteger& a, const BigInteger& b){ return !(a < b); }
-bool operator == (const BigInteger& a, const BigInteger& b) { return !(a < b) && !(b < a); }
-bool operator != (const BigInteger& a, const BigInteger& b) { return (a < b) || (b < a); }
+bool operator < (const BigInteger& a, const BigInteger::m_uint &b) {
+    if (a.is_neg) return true;
+    if (a.length > 1) return false;
+    return a.num[0] < b;
+}
 
 ostream& operator << (ostream& out, const BigInteger& a) {
     out << hex << "0x";
     for (int i = a.length - 1; i >= 0; i--) { out.fill('0'); out.width(4); out << a.num[i]; }
     return out;
 }
+
+bool BigInteger::miller_rabbin() {
+    if (*this < 3) return (*this) == 2;
+
+}
+
