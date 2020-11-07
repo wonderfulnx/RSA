@@ -3,4 +3,4 @@ project(RSA)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(RSA main.cpp src/BigInteger.cpp src/BigInteger.h)
+add_executable(RSA main.cpp src/BigInteger.cpp src/BigInteger.h src/RSA.cpp src/RSA.h)

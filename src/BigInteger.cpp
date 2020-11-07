@@ -6,6 +6,11 @@
 
 // Int is stored reversed in vector, the lsb is on the head and the msb is on the tail
 
+/*
+ *  --------------------------------------
+ *  Construction Function Area
+ *  --------------------------------------
+ */
 BigInteger::BigInteger(int unit_n) {
     unit_num = unit_n;
     length = 1;
@@ -24,21 +29,24 @@ BigInteger::BigInteger(int unit_n, m_uint n) {
 }
 
 BigInteger::BigInteger(const BigInteger &n) {
+    *this = n;
+}
+
+const BigInteger& BigInteger::operator=(const BigInteger &n) {
+    num.clear();
     unit_num = n.unit_num;
     length = n.length;
     is_neg = n.is_neg;
-    num = n.num;
+    num = vector<m_uint>(unit_num);
+    for (int i = 0; i < n.length; i++) num[i] = n.num[i];
+    return *this;
 }
 
-// ``remove'' the zeros on the back and find the length
-void BigInteger::trim() {
-    int i = unit_num - 1;
-    for (; i > 0; i--)
-        if (num[i] != 0) break;
-    length = i + 1;
-    return;
-}
-
+/*
+ *  --------------------------------------
+ *  Basic Public Function
+ *  --------------------------------------
+ */
 BigInteger BigInteger::abs() const {
     BigInteger ans(*this);
     ans.is_neg = false;
@@ -49,6 +57,11 @@ bool BigInteger::neg() const { return is_neg; }
 
 int BigInteger::size() const { return length; }
 
+/*
+ *  --------------------------------------
+ *  Public Operator Area
+ *  --------------------------------------
+ */
 BigInteger BigInteger::operator-() const {
     BigInteger ans(*this);
     if (length == 1 && ans.num[0] == 0) ans.is_neg = false;
@@ -68,7 +81,7 @@ BigInteger operator + (const BigInteger& a, const BigInteger& b) {
         if (ans.num[i] > BigInteger::LOW) {
             // do carry only when possible
             if (i + 1 < ans.unit_num) ans.num[i + 1] += 1;
-            ans.num[i] = ans.get_low(ans.num[i]);
+            ans.num[i] = BigInteger::get_low(ans.num[i]);
         }
     }
     ans.trim();
@@ -82,14 +95,18 @@ BigInteger operator - (const BigInteger& a, const BigInteger& b) {
 
     BigInteger ans(max(a.unit_num, b.unit_num));
     int len = max(a.length, b.length);
+    unsigned int carry = 0;
     for (int i = 0; i < len; i++) {
         BigInteger::m_uint aa = (i < a.length)? a.num[i] : 0;
         BigInteger::m_uint bb = (i < b.length)? b.num[i] : 0;
-        ans.num[i] += aa - bb;
-        if (ans.num[i] < 0) {
-            // do carry only when possible
-            if (i + 1 < ans.unit_num) ans.num[i + 1] -= 1;
-            ans.num[i] += BigInteger::BASE;
+        if (aa < bb + carry) {
+            // requires carry
+            ans.num[i] = BigInteger::BASE + aa - bb - carry;
+            carry = 1;
+        }
+        else {
+            ans.num[i] = aa - bb - carry;
+            carry = 0;
         }
     }
     ans.trim();
@@ -98,6 +115,8 @@ BigInteger operator - (const BigInteger& a, const BigInteger& b) {
 
 // Multiple should only be done when a.unit_num == b.unit_num
 BigInteger operator * (const BigInteger& a, const BigInteger& b) {
+    if (a.unit_num != b.unit_num) throw "Multiple numbers must have the same unit num.";
+
     BigInteger ans(a.unit_num);
     ans.is_neg = a.is_neg ^ b.is_neg;
 
@@ -106,7 +125,7 @@ BigInteger operator * (const BigInteger& a, const BigInteger& b) {
         // every time reaches i, check if carry required, make sure num[i] is lower than BASE
         if (ans.num[i] > BigInteger::LOW) {
             if (i + 1 < ans.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]); // only if carry is able to take place, we do carry
-            ans.num[i] = ans.get_low(ans.num[i]);
+            ans.num[i] = BigInteger::get_low(ans.num[i]);
         }
         for (int j = 0; j <= i; j++) {
             // start to compute number in num[i].
@@ -115,7 +134,7 @@ BigInteger operator * (const BigInteger& a, const BigInteger& b) {
             // do the same carry again every time, same as up there
             if (ans.num[i] > BigInteger::LOW) {
                 if (i + 1 < ans.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]);
-                ans.num[i] = ans.get_low(ans.num[i]);
+                ans.num[i] = BigInteger::get_low(ans.num[i]);
             }
         }
     }
@@ -124,11 +143,17 @@ BigInteger operator * (const BigInteger& a, const BigInteger& b) {
 }
 
 BigInteger operator / (const BigInteger& a, const BigInteger& b) {
-
+    if (a.unit_num != b.unit_num) throw "Division numbers must have the same unit num.";
+    BigInteger c(a.unit_num), d(a.unit_num);
+    div(a, b, c, d);
+    return c;
 }
 
 BigInteger operator % (const BigInteger& a, const BigInteger& b) {
-
+    if (a.unit_num != b.unit_num) throw "Division numbers must have the same unit num.";
+    BigInteger c(a.unit_num), d(a.unit_num);
+    div(a, b, c, d);
+    return d;
 }
 
 bool operator < (const BigInteger& a, const BigInteger& b) {
@@ -152,14 +177,146 @@ bool operator < (const BigInteger& a, const BigInteger::m_uint &b) {
     return a.num[0] < b;
 }
 
+bool operator > (const BigInteger& a, const BigInteger::m_uint &b) {
+    if (a.is_neg) return false;
+    if (a.length > 1) return true;
+    return a.num[0] > b;
+}
+
 ostream& operator << (ostream& out, const BigInteger& a) {
     out << hex << "0x";
     for (int i = a.length - 1; i >= 0; i--) { out.fill('0'); out.width(4); out << a.num[i]; }
     return out;
 }
 
-bool BigInteger::miller_rabbin() {
-    if (*this < 3) return (*this) == 2;
+BigInteger operator<<(const BigInteger &a, const BigInteger::m_uint &b) {
+    // left shift, only support no more than 16.
+    // remember number is stored reversely
+    if (b > 16) throw "left shift only support no more than 16 bit.";
+    BigInteger::m_uint mask = ((1 << b) - 1) << BigInteger::BITS_PER_UNIT;
+    BigInteger::m_uint carry = 0;
+    BigInteger::m_uint temp = 0;
+    BigInteger ans(a);
+    for (int i = 0; i < a.unit_num; i++) {
+        temp = ans.num[i] << b;
+        ans.num[i] = BigInteger::get_low(temp) | carry;
+        carry = (temp & mask) >> BigInteger::BITS_PER_UNIT;
+    }
+    ans.trim();
+    return ans;
+}
 
+BigInteger operator>>(const BigInteger &a, const BigInteger::m_uint &b) {
+    // right shift, only support no more than 16.
+    // remember number is stored reversely
+    if (b > 16) throw "right shift only support no more than 16 bit.";
+    BigInteger::m_uint mask = ((1 << b) - 1);
+    BigInteger::m_uint carry = 0;
+    BigInteger::m_uint n_car = 0;
+    BigInteger ans(a);
+    for (int i = a.unit_num - 1; i >= 0; i--) {
+        n_car = (ans.num[i] & mask) << (BigInteger::BITS_PER_UNIT - b);
+        ans.num[i] = BigInteger::get_low(ans.num[i] >> b) | carry;
+        carry = n_car;
+    }
+    ans.trim();
+    return ans;
+}
+
+/*
+ *  --------------------------------------
+ *  Public Function Area
+ *  --------------------------------------
+ */
+BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const BigInteger &m) {
+    // quick pow to get a * b % m
+    if (a.unit_num != b.unit_num || a.unit_num != m.unit_num) throw "BinPow can only be done with the same unit num.";
+    BigInteger aa(a % m), bb(b);
+    BigInteger res(a.unit_num, 1);
+    while (bb > 0) {
+        if (bb.num[0] & 1) res = res * aa % m;
+        aa = aa * aa % m;
+        bb = bb >> 1;
+    }
+    return res;
+}
+
+void BigInteger::random_prime(int unit_n) {
+
+}
+
+void BigInteger::random(const BigInteger& n) {
+
+}
+
+/*
+ *  --------------------------------------
+ *  Private Function Area
+ *  --------------------------------------
+ */
+// ``remove'' the zeros on the back and find the length
+void BigInteger::trim() {
+    int i = unit_num - 1;
+    for (; i > 0; i--)
+        if (num[i] != 0) break;
+    length = i + 1;
+
+    // for debug
+    for (int j = 0; j < unit_num; j++) if (num[j] > LOW) throw "Trim: a number exceeds 16 bit!";
+}
+
+bool greater_eq(const BigInteger &a, const BigInteger &b, int last_dg) {
+    // Dividend a and divisor b. Take last_dg as the lowest bit in a, return if a can sub b
+    int len = b.length;
+    if (last_dg + len < a.unit_num && a.num[last_dg + len] != 0) return true;
+    // start from high bit to low bit
+    for (int i = len - 1; i >= 0; i--) {
+        if (a.num[last_dg + i] > b.num[i]) return true;
+        if (a.num[last_dg + i] < b.num[i]) return false;
+    }
+    return true; // true if equal
+}
+
+void div(const BigInteger &a, const BigInteger &b, BigInteger &c, BigInteger &d) {
+    // for div function, all a, b, c, and d should have the same unit_num;
+    if (a.unit_num != b.unit_num || a.unit_num != c.unit_num || a.unit_num != d.unit_num) throw "Multiple numbers must have the same unit num.";
+    if (b.length == 1 && b.num[0] == 0) throw "Division by zero!";
+
+    // c is quotient and d is remainder
+    for (int i = 0; i < a.length; i++) d.num[i] = a.num[i];
+    for (int i = a.length - b.length; i >= 0; i--) {
+        while (greater_eq(d, b, i)) {
+            // start to subtract
+            unsigned int carry = 0;
+            for (int j = 0; j < b.length; j++) {
+                if (d.num[i + j] < b.num[j] + carry) {
+                    // requires carry
+                    d.num[i + j] = d.num[i + j] + BigInteger::BASE - b.num[j] - carry;
+                    carry = 1;
+                }
+                else {
+                    d.num[i + j] -= b.num[j] + carry;
+                    carry = 0;
+                }
+            }
+            if (i + b.length < a.length) d.num[i + b.length] -= carry;
+            c.num[i] += 1;
+        }
+    }
+
+    c.is_neg = a.is_neg ^ b.is_neg;
+    d.is_neg = a.is_neg;
+    c.trim(); d.trim();
+}
+
+bool BigInteger::miller_rabbin(int test_time) {
+    if (*this < 3) return (*this) == 2;
+    BigInteger ONE(this->unit_num, 1); BigInteger TWO(this->unit_num, 1); BigInteger d(*this - ONE);
+    BigInteger::m_uint s = 0;
+    while ((d.num[0] & 1) == 0) d >> 1, s++;
+    // if test time is k, then the error rate is 1/4^(k)
+    for (int i = 0; i < test_time; i++) {
+
+    }
 }
 
