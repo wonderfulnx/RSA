@@ -80,9 +80,27 @@ void test_div() {
     outfile.close();
 }
 
+void test_binpow() {
+    BigInteger a(UNIT_NUM);
+    BigInteger b(UNIT_NUM);
+    BigInteger m(UNIT_NUM);
+    ofstream outfile;
+    outfile.open(filename);
+
+    for (int i = 0; i < RUN_TIME; i++) {
+        a.random(UNIT_NUM / 2, mt);
+        b.random(UNIT_NUM / 2, mt);
+        m.random(UNIT_NUM / 2, mt);
+        outfile << a << " " << b << " " << m << endl;
+        outfile << BigInteger::binpow(a, b, m) <<  endl;
+        if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
+    }
+    outfile.close();
+}
+
 int main()
 {
-    test_div();
+    test_binpow();
     cout << "finished, Please verify the result with python." << endl;
     return 0;
 }
