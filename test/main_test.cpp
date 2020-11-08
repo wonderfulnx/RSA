@@ -6,12 +6,15 @@
 #include <random>
 #include <fstream>
 #include <string>
+#include <random>
 #include "../src/BigInteger.h"
 using namespace std;
 
 int RUN_TIME = 100000;
 int UNIT_NUM = 128;
-string filename = "data/data.txt";
+string filename = "data.txt";
+random_device rd;
+mt19937 mt(rd());
 
 void test_plus() {
     BigInteger a(UNIT_NUM);
@@ -20,8 +23,8 @@ void test_plus() {
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM / 2);
-        b.random(UNIT_NUM / 2);
+        a.random(UNIT_NUM / 2, mt);
+        b.random(UNIT_NUM / 2, mt);
         outfile << a << " " << b << endl;
         outfile << a + b << endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -36,8 +39,8 @@ void test_sub() {
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM / 2);
-        b.random(UNIT_NUM / 2);
+        a.random(UNIT_NUM / 2, mt);
+        b.random(UNIT_NUM / 2, mt);
         outfile << a << " " << b << endl;
         outfile << a - b << endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -52,8 +55,8 @@ void test_mul() {
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM / 2);
-        b.random(UNIT_NUM / 2);
+        a.random(UNIT_NUM / 2, mt);
+        b.random(UNIT_NUM / 2, mt);
         outfile << a << " " << b << endl;
         outfile << a * b << endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -68,8 +71,8 @@ void test_div() {
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM / 2);
-        b.random(UNIT_NUM / 2);
+        a.random(UNIT_NUM, mt);
+        b.random(UNIT_NUM / 2, mt);
         outfile << a << " " << b << endl;
         outfile << a / b << " " << a % b <<  endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -79,7 +82,7 @@ void test_div() {
 
 int main()
 {
-    test_plus();
+    test_div();
     cout << "finished, Please verify the result with python." << endl;
     return 0;
 }

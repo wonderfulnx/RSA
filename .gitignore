@@ -37,10 +37,12 @@
 # Others
 .vscode/
 .idea/
-data/
+cmake-build-debug/data.txt
+cmake-build-release/data.txt
 
 # CMake
 cmake-build-debug
+cmake-build-release
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles

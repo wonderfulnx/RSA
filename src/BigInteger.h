@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <random>
 using namespace std;
 
 class BigInteger {
@@ -68,15 +69,15 @@ public: // public operators
     const BigInteger& operator >>=(const BigInteger::m_uint &b);
 
 public:
-    void random(const BigInteger& n); // random a int less than n
-    void random(int unit_n); // random a int with unit_n units
-    void random_prime(int unit_n); // random a prime with length no more than unit_n
+    void random(const BigInteger& n, mt19937& mt); // random a int less than n
+    void random(int unit_n, mt19937& mt); // random a int with unit_n units
+    void random_prime(int unit_n, mt19937& mt); // random a prime with length no more than unit_n
     static BigInteger binpow(const BigInteger& a, const BigInteger& b, const BigInteger& m);
 
 private:
     void trim(); // cut leading zeros
 public:
-    bool miller_rabbin(int test_time); //miller rabbin test for prime
+    bool miller_rabbin(int test_time, mt19937& mt); //miller rabbin test for prime
 
     inline friend int greater_eq(const BigInteger& a, const BigInteger& b, int last_dg);
     friend void div(const BigInteger& a, const BigInteger& b, BigInteger& c, BigInteger &d);

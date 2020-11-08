@@ -1,5 +1,10 @@
 import os
+import time
 
+def get_file_modify(file_path):
+    ts = os.path.getmtime(file_path)
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(ts))
+    
 def test_plus(line1, line2):
     num = line1.split()
     a = int(num[0], 16)
@@ -39,12 +44,14 @@ def test_div(line1, line2):
     return True
 
 if __name__ == "__main__":
-    f = open('cmake-build-debug/data/data.txt')
+    file_path = 'cmake-build-release/data.txt'
+    f = open(file_path)
+    print(f"INFO - data File is modified at {get_file_modify(file_path)}")
     line1 = f.readline()
     line2 = f.readline()
     error_num = 0
     while line1 and line2:
-        if (test_plus(line1, line2)):
+        if (test_div(line1, line2) == False):
             error_num += 1
         line1 = f.readline()
         line2 = f.readline()

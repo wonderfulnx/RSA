@@ -256,20 +256,16 @@ BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const Bi
     return res;
 }
 
-void BigInteger::random(const BigInteger& n) {
-    random_device rd;
-    mt19937 mt(rd());
+void BigInteger::random(const BigInteger& n, mt19937& mt) {
     uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
     for (int i = 0; i < n.length; i++) this->num[i] = dist(mt) & LOW;
     trim();
     *this = *this % n;
 }
 
-void BigInteger::random(int unit_n) {
+void BigInteger::random(int unit_n, mt19937& mt) {
     if (unit_n > this->unit_num) throw "Unit number too large.";
 
-    random_device rd;
-    mt19937 mt(rd());
     uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
     int i = 0;
     for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
@@ -277,8 +273,7 @@ void BigInteger::random(int unit_n) {
     trim();
 }
 
-
-void BigInteger::random_prime(int unit_n) {
+void BigInteger::random_prime(int unit_n, mt19937& mt) {
 
 }
 
@@ -316,7 +311,7 @@ void div(const BigInteger &a, const BigInteger &b, BigInteger &c, BigInteger &d)
     if (a.unit_num != b.unit_num || a.unit_num != c.unit_num || a.unit_num != d.unit_num) throw "Multiple numbers must have the same unit num.";
     if (b.length == 1 && b.num[0] == 0) throw "Division by zero!";
 
-    vector<BigInteger::m_uint> tmp(b.length + 1); // store the temp res of b.length * m_uint
+    vector<BigInteger::m_uint> tmp(b.length + 1); // store the temp res of b.length * over_number
     // c is quotient and d is remainder
     for (int i = 0; i < a.length; i++) d.num[i] = a.num[i];
     for (int i = a.length - b.length; i >= 0; i--) {
@@ -325,6 +320,7 @@ void div(const BigInteger &a, const BigInteger &b, BigInteger &c, BigInteger &d)
             BigInteger::m_uint over_num = d.num[i + b.length];
             // step 1: compute b * over_number
             for (int k = 0; k < b.length; k++) tmp[k] = b.num[k] * over_num;
+            tmp[b.length] = 0;
             for (int k = 0; k < b.length; k++) if (tmp[k] > BigInteger::LOW) {
                 tmp[k + 1] += BigInteger::get_hig(tmp[k]);
                 tmp[k] = BigInteger::get_low(tmp[k]);
@@ -364,7 +360,7 @@ void div(const BigInteger &a, const BigInteger &b, BigInteger &c, BigInteger &d)
     c.trim(); d.trim();
 }
 
-bool BigInteger::miller_rabbin(int test_time) {
+bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
     if (*this < 3) return (*this) == 2;
     BigInteger ONE(this->unit_num, 1);
     BigInteger TWO(this->unit_num, 2);
@@ -377,7 +373,7 @@ bool BigInteger::miller_rabbin(int test_time) {
     while ((d.num[0] & 1) == 0) d >>= 1, s++;
     // if test time is k, then the error rate is 1/4^(k)
     for (int i = 0, r; i < test_time; i++) {
-        a.random(*this - TWO); a = a + TWO;
+        a.random(*this - TWO, mt); a = a + TWO;
         x = binpow(a, d, *this);
         if (x == 1 || x == n_1) continue;
         for (r = 0; r < s - 1; r++) {
