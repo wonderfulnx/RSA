@@ -37,6 +37,7 @@
 # Others
 .vscode/
 .idea/
+data/
 
 # CMake
 cmake-build-debug

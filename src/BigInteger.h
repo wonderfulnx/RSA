@@ -31,7 +31,7 @@ private:
 public: // basic functions
     BigInteger(int unit_n);
     BigInteger(int unit_n, m_uint n);
-    BigInteger(const BigInteger& n);
+    BigInteger(int unit_n, const BigInteger& n);
 
     const BigInteger& operator=(const BigInteger &n);
 
@@ -64,9 +64,12 @@ public: // public operators
     friend ostream& operator << (ostream& out, const BigInteger& a);
     friend BigInteger operator << (const BigInteger& a, const BigInteger::m_uint &b);
     friend BigInteger operator >> (const BigInteger& a, const BigInteger::m_uint &b);
+    const BigInteger& operator <<=(const BigInteger::m_uint &b);
+    const BigInteger& operator >>=(const BigInteger::m_uint &b);
 
 public:
     void random(const BigInteger& n); // random a int less than n
+    void random(int unit_n); // random a int with unit_n units
     void random_prime(int unit_n); // random a prime with length no more than unit_n
     static BigInteger binpow(const BigInteger& a, const BigInteger& b, const BigInteger& m);
 

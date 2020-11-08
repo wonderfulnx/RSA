@@ -29,17 +29,19 @@ BigInteger::BigInteger(int unit_n, m_uint n) {
     else length = 2;
 }
 
-BigInteger::BigInteger(const BigInteger &n) {
+BigInteger::BigInteger(int unit_n, const BigInteger &n) {
+    unit_num = unit_n;
+    is_neg = false;
+    length = 1;
+    num = vector<m_uint>(unit_num);
     *this = n;
 }
 
 const BigInteger& BigInteger::operator=(const BigInteger &n) {
-    num.clear();
-    unit_num = n.unit_num;
+    if (n.unit_num != unit_num) throw "Failed to assign, unit num not the same!";
     length = n.length;
     is_neg = n.is_neg;
-    num = vector<m_uint>(unit_num);
-    for (int i = 0; i < n.length; i++) num[i] = n.num[i];
+    for (int i = 0; i < unit_num; i++) num[i] = n.num[i];
     return *this;
 }
 
@@ -64,7 +66,7 @@ int BigInteger::size() const { return length; }
  *  --------------------------------------
  */
 BigInteger BigInteger::operator-() const {
-    BigInteger ans(*this);
+    BigInteger ans(this->unit_num, *this);
     if (length == 1 && ans.num[0] == 0) ans.is_neg = false;
     else ans.is_neg = !ans.is_neg;
     return ans;
@@ -185,42 +187,53 @@ bool operator > (const BigInteger& a, const BigInteger::m_uint &b) {
 }
 
 ostream& operator << (ostream& out, const BigInteger& a) {
+    if (a.is_neg) out << "-";
     out << hex << "0x";
     for (int i = a.length - 1; i >= 0; i--) { out.fill('0'); out.width(4); out << a.num[i]; }
     return out;
 }
 
-BigInteger operator<<(const BigInteger &a, const BigInteger::m_uint &b) {
+const BigInteger& BigInteger::operator<<=(const BigInteger::m_uint &b) {
     // left shift, only support no more than 16.
     // remember number is stored reversely
     if (b > 16) throw "left shift only support no more than 16 bit.";
     BigInteger::m_uint mask = ((1 << b) - 1) << BigInteger::BITS_PER_UNIT;
     BigInteger::m_uint carry = 0;
     BigInteger::m_uint temp = 0;
-    BigInteger ans(a);
-    for (int i = 0; i < a.unit_num; i++) {
-        temp = ans.num[i] << b;
-        ans.num[i] = BigInteger::get_low(temp) | carry;
+    for (int i = 0; i < unit_num; i++) {
+        temp = num[i] << b;
+        num[i] = BigInteger::get_low(temp) | carry;
         carry = (temp & mask) >> BigInteger::BITS_PER_UNIT;
     }
-    ans.trim();
-    return ans;
+    trim();
+    return *this;
 }
 
-BigInteger operator>>(const BigInteger &a, const BigInteger::m_uint &b) {
+const BigInteger& BigInteger::operator>>=(const BigInteger::m_uint &b) {
     // right shift, only support no more than 16.
     // remember number is stored reversely
     if (b > 16) throw "right shift only support no more than 16 bit.";
     BigInteger::m_uint mask = ((1 << b) - 1);
     BigInteger::m_uint carry = 0;
     BigInteger::m_uint n_car = 0;
-    BigInteger ans(a);
-    for (int i = a.unit_num - 1; i >= 0; i--) {
-        n_car = (ans.num[i] & mask) << (BigInteger::BITS_PER_UNIT - b);
-        ans.num[i] = BigInteger::get_low(ans.num[i] >> b) | carry;
+    for (int i = unit_num - 1; i >= 0; i--) {
+        n_car = (num[i] & mask) << (BigInteger::BITS_PER_UNIT - b);
+        num[i] = BigInteger::get_low(num[i] >> b) | carry;
         carry = n_car;
     }
-    ans.trim();
+    trim();
+    return *this;
+}
+
+BigInteger operator<<(const BigInteger &a, const BigInteger::m_uint &b) {
+    BigInteger ans(a.unit_num, a);
+    ans <<= b;
+    return ans;
+}
+
+BigInteger operator>>(const BigInteger &a, const BigInteger::m_uint &b) {
+    BigInteger ans(a.unit_num, a);
+    ans >>= b;
     return ans;
 }
 
@@ -232,12 +245,12 @@ BigInteger operator>>(const BigInteger &a, const BigInteger::m_uint &b) {
 BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const BigInteger &m) {
     // quick pow to get a * b % m
     if (a.unit_num != b.unit_num || a.unit_num != m.unit_num) throw "BinPow can only be done with the same unit num.";
-    BigInteger aa(a % m), bb(b);
+    BigInteger aa(a.unit_num ,a % m), bb(b.unit_num, b);
     BigInteger res(a.unit_num, 1);
     while (bb > 0) {
         if (bb.num[0] & 1) res = res * aa % m;
         aa = aa * aa % m;
-        bb = bb >> 1;
+        bb >>= 1;
     }
     res.trim();
     return res;
@@ -251,6 +264,19 @@ void BigInteger::random(const BigInteger& n) {
     trim();
     *this = *this % n;
 }
+
+void BigInteger::random(int unit_n) {
+    if (unit_n > this->unit_num) throw "Unit number too large.";
+
+    random_device rd;
+    mt19937 mt(rd());
+    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
+    int i = 0;
+    for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
+    for (; i < unit_num; i++) this->num[i] = 0;
+    trim();
+}
+
 
 void BigInteger::random_prime(int unit_n) {
 
@@ -320,13 +346,13 @@ bool BigInteger::miller_rabbin(int test_time) {
     if (*this < 3) return (*this) == 2;
     BigInteger ONE(this->unit_num, 1);
     BigInteger TWO(this->unit_num, 2);
-    BigInteger n_1(*this - ONE);
-    BigInteger d(n_1);
+    BigInteger n_1(this->unit_num, *this - ONE);
+    BigInteger d(this->unit_num, n_1);
     BigInteger a(this->unit_num);
     BigInteger x(this->unit_num);
     int s = 0;
 
-    while ((d.num[0] & 1) == 0) d = d >> 1, s++;
+    while ((d.num[0] & 1) == 0) d >>= 1, s++;
     // if test time is k, then the error rate is 1/4^(k)
     for (int i = 0, r; i < test_time; i++) {
         a.random(*this - TWO); a = a + TWO;
