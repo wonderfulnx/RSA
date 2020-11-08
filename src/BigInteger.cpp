@@ -298,16 +298,17 @@ void BigInteger::trim() {
     for (int j = 0; j < unit_num; j++) if (num[j] > LOW) throw "Trim: a number exceeds 16 bit!";
 }
 
-bool greater_eq(const BigInteger &a, const BigInteger &b, int last_dg) {
+int greater_eq(const BigInteger &a, const BigInteger &b, int last_dg) {
     // Dividend a and divisor b. Take last_dg as the lowest bit in a, return if a can sub b
+    // 2 -> overlong, 1 -> able to sub, 0 -> not able to sub
     int len = b.length;
-    if (last_dg + len < a.unit_num && a.num[last_dg + len] != 0) return true;
+    if (last_dg + len < a.unit_num && a.num[last_dg + len] != 0) return 2;
     // start from high bit to low bit
     for (int i = len - 1; i >= 0; i--) {
-        if (a.num[last_dg + i] > b.num[i]) return true;
-        if (a.num[last_dg + i] < b.num[i]) return false;
+        if (a.num[last_dg + i] > b.num[i]) return 1;
+        if (a.num[last_dg + i] < b.num[i]) return 0;
     }
-    return true; // true if equal
+    return 1; // true if equal
 }
 
 void div(const BigInteger &a, const BigInteger &b, BigInteger &c, BigInteger &d) {
@@ -315,22 +316,43 @@ void div(const BigInteger &a, const BigInteger &b, BigInteger &c, BigInteger &d)
     if (a.unit_num != b.unit_num || a.unit_num != c.unit_num || a.unit_num != d.unit_num) throw "Multiple numbers must have the same unit num.";
     if (b.length == 1 && b.num[0] == 0) throw "Division by zero!";
 
+    vector<BigInteger::m_uint> tmp(b.length + 1); // store the temp res of b.length * m_uint
     // c is quotient and d is remainder
     for (int i = 0; i < a.length; i++) d.num[i] = a.num[i];
     for (int i = a.length - b.length; i >= 0; i--) {
-        while (greater_eq(d, b, i)) {
+        while (greater_eq(d, b, i) == 2) {
+            // over long. we do ``d -= b * over_number'' and ``c[i] += over_number''
+            BigInteger::m_uint over_num = d.num[i + b.length];
+            // step 1: compute b * over_number
+            for (int k = 0; k < b.length; k++) tmp[k] = b.num[k] * over_num;
+            for (int k = 0; k < b.length; k++) if (tmp[k] > BigInteger::LOW) {
+                tmp[k + 1] += BigInteger::get_hig(tmp[k]);
+                tmp[k] = BigInteger::get_low(tmp[k]);
+            }
+            // step 2: d -= res, but take i as start
+            unsigned int carry = 0;
+            for (int j = 0; j <= b.length; j++) {
+                if (d.num[i + j] < tmp[j] + carry) {
+                    // requires carry
+                    d.num[i + j] = d.num[i + j] + BigInteger::BASE - tmp[j] - carry;
+                    carry = 1;
+                }
+                else d.num[i + j] -= tmp[j] + carry, carry = 0;
+            }
+            c.num[i] += over_num;
+        }
+
+        while (greater_eq(d, b, i) == 1) {
             // start to subtract
             unsigned int carry = 0;
             for (int j = 0; j < b.length; j++) {
+                // a in-place sub
                 if (d.num[i + j] < b.num[j] + carry) {
                     // requires carry
                     d.num[i + j] = d.num[i + j] + BigInteger::BASE - b.num[j] - carry;
                     carry = 1;
                 }
-                else {
-                    d.num[i + j] -= b.num[j] + carry;
-                    carry = 0;
-                }
+                else d.num[i + j] -= b.num[j] + carry, carry = 0;
             }
             if (i + b.length < a.length) d.num[i + b.length] -= carry;
             c.num[i] += 1;

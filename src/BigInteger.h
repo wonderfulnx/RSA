@@ -19,7 +19,7 @@ public:
     static const m_uint BASE = 0x00010000; // BASE is low + 1
 private:
     inline static m_uint get_low(m_uint a) {return a & LOW;}
-    inline static m_uint get_hig(m_uint a) {return a >> 16;}
+    inline static m_uint get_hig(m_uint a) {return a >> 16u;}
 
 private:
     // requires unit num, 1 unit means able to store a half m_uint
@@ -78,7 +78,7 @@ private:
 public:
     bool miller_rabbin(int test_time); //miller rabbin test for prime
 
-    inline friend bool greater_eq(const BigInteger& a, const BigInteger& b, int last_dg);
+    inline friend int greater_eq(const BigInteger& a, const BigInteger& b, int last_dg);
     friend void div(const BigInteger& a, const BigInteger& b, BigInteger& c, BigInteger &d);
 };
 
