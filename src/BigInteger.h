@@ -22,7 +22,6 @@ public:
 private:
     inline static m_uint get_low(m_uint a) {return a & LOW;}
     inline static m_uint get_hig(m_uint a) {return a >> 16u;}
-    static vector<BigInteger> primes;
 
 private:
     // requires unit num, 1 unit means able to store a half m_uint
@@ -85,6 +84,5 @@ public:
     inline friend int greater_eq(const BigInteger& a, const BigInteger& b, int last_dg);
     friend void div(const BigInteger& a, const BigInteger& b, BigInteger& c, BigInteger &d);
 };
-
 
 #endif //RSA_BIGINTEGER_H

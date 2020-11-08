@@ -6,6 +6,8 @@
 #include <random>
 #include <fstream>
 
+vector<BigInteger> PRIMES;
+
 // Int is stored reversed in vector, the lsb is on the head and the msb is on the tail
 
 /*
@@ -289,21 +291,20 @@ void BigInteger::random_prime(int unit_n, mt19937& mt) {
         trim();
 
         int j = 0;
-        for (; j < primes.size(); j++)
-            if (*this % primes[i] == 0) break;
-        if (j == primes.size() && this->miller_rabbin(10, mt)) break;
-        else *this = *this + 2;
+        for (; j < PRIMES.size(); j++)
+            if (*this % PRIMES[i] == 0) break;
+        if (j == PRIMES.size() && this->miller_rabbin(10, mt)) break;
+        else *this = *this + TWO;
     }
 }
 
 void BigInteger::load_prime(int unit_n) {
-    primes = vector<BigInteger>();
     ifstream infile;
     infile.open("prime.txt");
     BigInteger::m_uint data;
     while (!infile.eof()) {
         infile >> data;
-        if (data) primes.push_back(BigInteger(unit_n, data));
+        if (data) PRIMES.push_back(BigInteger(unit_n, data));
     }
     infile.close();
 }
