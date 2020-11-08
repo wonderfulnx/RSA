@@ -4,6 +4,7 @@
 
 #include "BigInteger.h"
 #include <random>
+#include <fstream>
 
 // Int is stored reversed in vector, the lsb is on the head and the msb is on the tail
 
@@ -194,9 +195,9 @@ ostream& operator << (ostream& out, const BigInteger& a) {
 }
 
 const BigInteger& BigInteger::operator<<=(const BigInteger::m_uint &b) {
-    // left shift, only support no more than 16.
+    // left shift, only support no more than BITS_PER_UNIT.
     // remember number is stored reversely
-    if (b > 16) throw "left shift only support no more than 16 bit.";
+    if (b > BITS_PER_UNIT) throw "left shift only support no more than BITS_PER_UNIT bit.";
     BigInteger::m_uint mask = ((1 << b) - 1) << BigInteger::BITS_PER_UNIT;
     BigInteger::m_uint carry = 0;
     BigInteger::m_uint temp = 0;
@@ -210,9 +211,9 @@ const BigInteger& BigInteger::operator<<=(const BigInteger::m_uint &b) {
 }
 
 const BigInteger& BigInteger::operator>>=(const BigInteger::m_uint &b) {
-    // right shift, only support no more than 16.
+    // right shift, only support no more than BITS_PER_UNIT.
     // remember number is stored reversely
-    if (b > 16) throw "right shift only support no more than 16 bit.";
+    if (b > BITS_PER_UNIT) throw "right shift only support no more than BITS_PER_UNIT bit.";
     BigInteger::m_uint mask = ((1 << b) - 1);
     BigInteger::m_uint carry = 0;
     BigInteger::m_uint n_car = 0;
@@ -274,7 +275,37 @@ void BigInteger::random(int unit_n, mt19937& mt) {
 }
 
 void BigInteger::random_prime(int unit_n, mt19937& mt) {
+    if (unit_n > this->unit_num) throw "Unit number too large.";
 
+    int i = 0;
+    BigInteger TWO(this->unit_num, 2);
+    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
+    for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
+    for (; i < unit_num; i++) this->num[i] = 0;
+
+    while (1) {
+        this->num[unit_n - 1] |= (1 << (BITS_PER_UNIT - 1));
+        this->num[0] |= 1;
+        trim();
+
+        int j = 0;
+        for (; j < primes.size(); j++)
+            if (*this % primes[i] == 0) break;
+        if (j == primes.size() && this->miller_rabbin(10, mt)) break;
+        else *this = *this + 2;
+    }
+}
+
+void BigInteger::load_prime(int unit_n) {
+    primes = vector<BigInteger>();
+    ifstream infile;
+    infile.open("prime.txt");
+    BigInteger::m_uint data;
+    while (!infile.eof()) {
+        infile >> data;
+        if (data) primes.push_back(BigInteger(unit_n, data));
+    }
+    infile.close();
 }
 
 /*
@@ -290,7 +321,7 @@ void BigInteger::trim() {
     length = i + 1;
 
     // for debug
-    for (int j = 0; j < unit_num; j++) if (num[j] > LOW) throw "Trim: a number exceeds 16 bit!";
+    for (int j = 0; j < unit_num; j++) if (num[j] > LOW) throw "Trim: a number exceeds LOW!";
 }
 
 int greater_eq(const BigInteger &a, const BigInteger &b, int last_dg) {
@@ -385,4 +416,6 @@ bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
     }
     return true;
 }
+
+
 

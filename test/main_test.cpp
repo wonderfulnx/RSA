@@ -100,6 +100,8 @@ void test_binpow() {
 
 int main()
 {
+    BigInteger::load_prime(UNIT_NUM);
+
     test_binpow();
     cout << "finished, Please verify the result with python." << endl;
     return 0;

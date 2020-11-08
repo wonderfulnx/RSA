@@ -18,9 +18,11 @@ public:
     static const m_uint LOW = 0x0000FFFF;
     static const m_uint HIG = 0xFFFF0000;
     static const m_uint BASE = 0x00010000; // BASE is low + 1
+
 private:
     inline static m_uint get_low(m_uint a) {return a & LOW;}
     inline static m_uint get_hig(m_uint a) {return a >> 16u;}
+    static vector<BigInteger> primes;
 
 private:
     // requires unit num, 1 unit means able to store a half m_uint
@@ -73,6 +75,7 @@ public:
     void random(int unit_n, mt19937& mt); // random a int with unit_n units
     void random_prime(int unit_n, mt19937& mt); // random a prime with length no more than unit_n
     static BigInteger binpow(const BigInteger& a, const BigInteger& b, const BigInteger& m);
+    static void load_prime(int unit_n);
 
 private:
     void trim(); // cut leading zeros
