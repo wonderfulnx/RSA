@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <cstdio>
+#include <random>
 using namespace std;
 
 typedef long long m_int;
@@ -50,8 +51,9 @@ public: // basic functions
     friend ostream& operator << (ostream& out, const BigInteger& a);
 
 public:
-    void random(int l); // random a int with l unit
-    void random_prime(int l); // random a prime with l unit
+    void random(int bit_n, mt19937& mt); // random a number with bit_n bits
+    void random_prime(int bit_n, mt19937& mt); // random a prime with bit_n bits
+    void random(const BigInteger& n, mt19937& mt); // random a number less than n
     static void load_prime();
     static BigInteger binpow(const BigInteger& a, const BigInteger& b, const BigInteger& m);
 

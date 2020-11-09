@@ -11,20 +11,20 @@
 using namespace std;
 
 int RUN_TIME = 100000;
-int UNIT_NUM = 128;
+int BIT_NUM = 1024;
 string filename = "data.txt";
 random_device rd;
 mt19937 mt(rd());
 
 void test_plus() {
-    BigInteger a(UNIT_NUM);
-    BigInteger b(UNIT_NUM);
+    BigInteger a;
+    BigInteger b;
     ofstream outfile;
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM / 2, mt);
-        b.random(UNIT_NUM / 2, mt);
+        a.random(BIT_NUM, mt);
+        b.random(BIT_NUM, mt);
         outfile << a << " " << b << endl;
         outfile << a + b << endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -33,14 +33,14 @@ void test_plus() {
 }
 
 void test_sub() {
-    BigInteger a(UNIT_NUM);
-    BigInteger b(UNIT_NUM);
+    BigInteger a;
+    BigInteger b;
     ofstream outfile;
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM / 2, mt);
-        b.random(UNIT_NUM / 2, mt);
+        a.random(BIT_NUM, mt);
+        b.random(BIT_NUM, mt);
         outfile << a << " " << b << endl;
         outfile << a - b << endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -49,14 +49,14 @@ void test_sub() {
 }
 
 void test_mul() {
-    BigInteger a(UNIT_NUM);
-    BigInteger b(UNIT_NUM);
+    BigInteger a;
+    BigInteger b;
     ofstream outfile;
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM / 2, mt);
-        b.random(UNIT_NUM / 2, mt);
+        a.random(BIT_NUM / 2, mt);
+        b.random(BIT_NUM / 2, mt);
         outfile << a << " " << b << endl;
         outfile << a * b << endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -65,32 +65,32 @@ void test_mul() {
 }
 
 void test_div() {
-    BigInteger a(UNIT_NUM);
-    BigInteger b(UNIT_NUM);
+    BigInteger a;
+    BigInteger b;
     ofstream outfile;
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM, mt);
-        b.random(UNIT_NUM / 2, mt);
+        a.random(BIT_NUM, mt);
+        b.random(BIT_NUM / 2, mt);
         outfile << a << " " << b << endl;
-        outfile << a / b << " " << a % b <<  endl;
+        outfile << a % b <<  endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
     }
     outfile.close();
 }
 
 void test_binpow() {
-    BigInteger a(UNIT_NUM);
-    BigInteger b(UNIT_NUM);
-    BigInteger m(UNIT_NUM);
+    BigInteger a;
+    BigInteger b;
+    BigInteger m;
     ofstream outfile;
     outfile.open(filename);
 
     for (int i = 0; i < RUN_TIME; i++) {
-        a.random(UNIT_NUM / 2, mt);
-        b.random(UNIT_NUM / 2, mt);
-        m.random(UNIT_NUM / 2, mt);
+        a.random(BIT_NUM / 2, mt);
+        b.random(BIT_NUM / 2, mt);
+        m.random(BIT_NUM / 2, mt);
         outfile << a << " " << b << " " << m << endl;
         outfile << BigInteger::binpow(a, b, m) <<  endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -98,11 +98,24 @@ void test_binpow() {
     outfile.close();
 }
 
+void test_random_prime() {
+    BigInteger p;
+    ofstream outfile;
+    outfile.open(filename);
+
+    for (int i = 0; i < RUN_TIME; i++) {
+        p.random_prime(BIT_NUM / 2, mt);
+        outfile << p << endl;
+        if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
+    }
+    outfile.close();
+}
+
 int main()
 {
-    BigInteger::load_prime(UNIT_NUM);
+    BigInteger::load_prime();
 
-    test_binpow();
+    test_div();
     cout << "finished, Please verify the result with python." << endl;
     return 0;
 }

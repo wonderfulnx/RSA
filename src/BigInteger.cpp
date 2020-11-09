@@ -5,6 +5,7 @@
 #include "BigInteger.h"
 #include <fstream>
 #include <string>
+#include <random>
 
 const int init_prime_num = 1229;
 long long primes[init_prime_num];
@@ -176,39 +177,35 @@ BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const Bi
     return res;
 }
 
-void BigInteger::random(const BigInteger& n) {
-    for (int i = 0; i < n.length; i++) this->num[i] = dist(mt) & LOW;
+void BigInteger::random(int bit_n, mt19937& mt) {
+    int i = 0;
+    uniform_int_distribution<m_int> dist(0, base - 1);
+    for (; i < bit_n / base_bits; i++)
+        num[i] = dist(mt) & (base - 1);
+    num[i] = dist(mt) & ((1ll << (bit_n % base_bits)) - 1);
+    trim();
+}
+
+void BigInteger::random(const BigInteger& n, mt19937& mt) {
+    this->random(n.len * base_bits, mt);
     trim();
     *this = *this % n;
 }
 
-void BigInteger::random(int unit_n) {
-    BigInteger res;
-
-    int i = 0;
-    for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
-    for (; i < unit_num; i++) this->num[i] = 0;
-    trim();
-}
-
-void BigInteger::random_prime(int unit_n) {
-
-    int i = 0;
-    BigInteger TWO(this->unit_num, 2);
-    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW)
-    for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
-    for (; i < unit_num; i++) this->num[i] = 0;
-
+void BigInteger::random_prime(int bit_n, mt19937& mt) {
+    this->random(bit_n, mt);
     while (1) {
-        this->num[unit_n - 1] |= (1 << (BITS_PER_UNIT - 1));
+        // set the highest bit and lowest bit to 1
+        if (bit_n % base_bits) this->num[len - 1] |= (1ll << (bit_n % base_bits - 1));
+        else this->num[len - 1] |= (base >> 1);
         this->num[0] |= 1;
         trim();
 
         int j = 0;
-        for (; j < PRIMES.size(); j++)
-            if (*this % PRIMES[i] == 0) break;
-        if (j == PRIMES.size() && this->miller_rabbin(10, mt)) break;
-        else *this = *this + TWO;
+        for (; j < init_prime_num; j++)
+            if (*this % primes[j] == 0) break;
+        if (j == init_prime_num && this->miller_rabbin(10, mt)) break;
+        else *this = *this + Two;
     }
 }
 
@@ -247,18 +244,22 @@ void BigInteger::left_shift(int unit_n) {
 
 bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
     if (*this < 3) return (*this) == 2;
-    BigInteger ONE(this->unit_num, 1);
-    BigInteger TWO(this->unit_num, 2);
-    BigInteger n_1(this->unit_num, *this - ONE);
-    BigInteger d(this->unit_num, n_1);
-    BigInteger a(this->unit_num);
-    BigInteger x(this->unit_num);
+    BigInteger n_1(*this - One), d(n_1), a, x;
     int s = 0;
 
-    while ((d.num[0] & 1) == 0) d >>= 1, s++;
+    // compute n_1 = d * 2 ^ s
+    while ((d.num[s / base_bits] & (1 << (s % base_bits))) == 0) s++;
+    int unit_n = s / base_bits;
+    int bit_n = s % base_bits;
+    for (int i = unit_n; i < d.len; i++) d.num[i - unit_n] = d.num[i];
+    for (int i = d.len - unit_n; i < d.len; i++) d.num[i] = 0;
+    for (int i = 0; i < d.len; i++)
+        d.num[i] = (d.num[i] >> bit_n) | (d.num[i + 1] & ((1ll << bit_n) - 1) << (base_bits - bit_n));
+    d.trim();
+
     // if test time is k, then the error rate is 1/4^(k)
     for (int i = 0, r; i < test_time; i++) {
-        a.random(*this - TWO, mt); a = a + TWO;
+        a.random(*this - Two, mt); a = a + Two;
         x = binpow(a, d, *this);
         if (x == 1 || x == n_1) continue;
         for (r = 0; r < s - 1; r++) {

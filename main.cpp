@@ -8,14 +8,13 @@ int main()
 {
     random_device rd;
     mt19937 mt(rd());
-    int UNIT_NUM = 4;
-    BigInteger::load_prime(UNIT_NUM);
+    BigInteger::load_prime();
 
-    BigInteger a(UNIT_NUM, 0x614de8d0);
-    BigInteger b(UNIT_NUM, 0xefba);
-    BigInteger c(UNIT_NUM, 0xFFFF);
+    BigInteger a(0x614de8d0);
+    BigInteger b(0xefba);
+    BigInteger c(0xFFFF);
 
-    a.random_prime(UNIT_NUM / 2, mt);
+    a.random_prime(1024, mt);
     cout << a << endl;
 
 
