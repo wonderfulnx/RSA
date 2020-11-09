@@ -212,6 +212,10 @@ void BigInteger::random_prime(int bit_n, mt19937& mt) {
 void BigInteger::load_prime() {
     ifstream infile;
     infile.open("prime.txt");
+	if (!infile) {
+		cout << "Error: prime.txt does not exist!" << endl;
+		return;
+	}
     m_int data;
     for (int i = 0; i < init_prime_num; i++) {
         infile >> data;
@@ -248,13 +252,13 @@ bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
     int s = 0;
 
     // compute n_1 = d * 2 ^ s
-    while ((d.num[s / base_bits] & (1 << (s % base_bits))) == 0) s++;
+	while ((d.num[s / base_bits] & (1ll << (s % base_bits))) == 0) s++;
     int unit_n = s / base_bits;
     int bit_n = s % base_bits;
     for (int i = unit_n; i < d.len; i++) d.num[i - unit_n] = d.num[i];
     for (int i = d.len - unit_n; i < d.len; i++) d.num[i] = 0;
     for (int i = 0; i < d.len; i++)
-        d.num[i] = (d.num[i] >> bit_n) | (d.num[i + 1] & ((1ll << bit_n) - 1) << (base_bits - bit_n));
+        d.num[i] = (d.num[i] >> bit_n) | ((d.num[i + 1] & ((1ll << bit_n) - 1)) << (base_bits - bit_n));
     d.trim();
 
     // if test time is k, then the error rate is 1/4^(k)

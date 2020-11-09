@@ -118,14 +118,14 @@ def test_prime(line1, line2):
     return True
 
 if __name__ == "__main__":
-    file_path = 'cmake-build-release/data.txt'
+    file_path = 'test/data.txt'
     f = open(file_path)
     print(f"INFO - data File is modified at {get_file_modify(file_path)}")
     line1 = f.readline()
     line2 = f.readline()
     error_num = 0
     while line1 and line2:
-        if (test_div(line1, line2) == False):
+        if (test_binpow(line1, line2) == False):
             error_num += 1
         line1 = f.readline()
         line2 = f.readline()

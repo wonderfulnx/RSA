@@ -39,6 +39,10 @@
 .idea/
 cmake-build-debug/data.txt
 cmake-build-release/data.txt
+main/data.txt
+main/prime.txt
+test/data.txt
+test/prime.txt
 
 # CMake
 cmake-build-debug

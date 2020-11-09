@@ -115,10 +115,12 @@ int main()
 {
     BigInteger::load_prime();
 
-//    test_plus();
-//    test_sub();
-//    test_mul();
-    test_div();
+    //test_plus();
+    //test_sub();
+    //test_mul();
+    //test_div();
+	//test_binpow();
+
     cout << "finished, Please verify the result with python." << endl;
     return 0;
 }

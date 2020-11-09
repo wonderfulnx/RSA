@@ -14,7 +14,7 @@ int main()
     BigInteger b(0xefba);
     BigInteger c(0xFFFF);
 
-    a.random_prime(1024, mt);
+    a.random_prime(512, mt);
     cout << a << endl;
 
 
