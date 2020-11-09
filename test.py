@@ -125,7 +125,7 @@ if __name__ == "__main__":
     line2 = f.readline()
     error_num = 0
     while line1 and line2:
-        if (test_binpow(line1, line2) == False):
+        if (test_div(line1, line2) == False):
             error_num += 1
         line1 = f.readline()
         line2 = f.readline()

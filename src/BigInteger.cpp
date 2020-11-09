@@ -22,6 +22,7 @@ int curr_fac_point;
  */
 BigInteger::BigInteger(m_int n) {
     is_neg = false;
+    len = 0;
     memset(num, 0, sizeof(num));
     while (n) { num[len] = n % base; n /= base; len++; }
     if (len == 0) len = 1;
@@ -151,7 +152,7 @@ bool operator < (const BigInteger& a, const BigInteger& b) {
 ostream& operator << (ostream& out, const BigInteger& a) {
     if (a.is_neg) out << "-";
     out << hex << "0x";
-    for (int i = a.len - 1; i >= 0; i--) { out.fill('0'); out.width(4); out << a.num[i]; }
+    for (int i = a.len - 1; i >= 0; i--) { out.fill('0'); out.width(base_bits / 4); out << a.num[i]; }
     return out;
 }
 
@@ -188,7 +189,6 @@ void BigInteger::random(int bit_n, mt19937& mt) {
 
 void BigInteger::random(const BigInteger& n, mt19937& mt) {
     this->random(n.len * base_bits, mt);
-    trim();
     *this = *this % n;
 }
 

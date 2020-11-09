@@ -10,7 +10,7 @@
 #include "../src/BigInteger.h"
 using namespace std;
 
-int RUN_TIME = 100000;
+int RUN_TIME = 20000;
 int BIT_NUM = 1024;
 string filename = "data.txt";
 random_device rd;
@@ -115,6 +115,9 @@ int main()
 {
     BigInteger::load_prime();
 
+//    test_plus();
+//    test_sub();
+//    test_mul();
     test_div();
     cout << "finished, Please verify the result with python." << endl;
     return 0;
