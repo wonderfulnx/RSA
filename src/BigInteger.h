@@ -7,7 +7,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <random>
 #include <cstdio>
 using namespace std;
 
@@ -15,7 +14,7 @@ typedef long long m_int;
 const int base_bits = 24;
 const int max_bit_num = 2048;
 const long long base = 1ll << base_bits;
-const int unit_num = max_bit_num / base_bits + 10;
+const int unit_num = max_bit_num * 4 / base_bits + 10;
 
 /*
  * Big Integer Class
@@ -58,7 +57,7 @@ public:
 
 private:
     void trim(); // cut leading zeros
-    void cut_lsb(int start); // cut the lsb before start, move msg to left part
+    void left_shift(int unit_n);
     bool miller_rabbin(int test_time, mt19937& mt); //miller rabbin test for prime
 };
 

@@ -3,7 +3,6 @@
 //
 
 #include "BigInteger.h"
-#include <random>
 #include <fstream>
 #include <string>
 
@@ -13,6 +12,7 @@ const BigInteger One(1);
 const BigInteger Two(2);
 BigInteger curr_moduli;
 BigInteger curr_moduli_reciprocal;
+int curr_fac_point;
 
 /*
  *  --------------------------------------
@@ -109,8 +109,27 @@ BigInteger operator % (const BigInteger& a, const BigInteger& b) {
     if (!(b == curr_moduli)) {
         // change the saved curr_moduli to b
         curr_moduli = b;
-        curr_moduli_reciprocal = 1;
+        curr_moduli_reciprocal = 1; // this is a big float
+        curr_fac_point = curr_moduli.len;
+        int lim = curr_moduli.len << 1;
+        for (int i = 0; i < 100; i++) {
+            // compute an(2-b*an)
+            BigInteger two_float;
+            two_float.len = curr_fac_point + 1;
+            two_float.num[curr_fac_point] = 2;
+            curr_moduli_reciprocal = curr_moduli_reciprocal * (two_float - curr_moduli * curr_moduli_reciprocal);
+            curr_fac_point <<= 1; // two float multiple, fac point changes
+            if (curr_moduli_reciprocal.len > lim) {
+                curr_fac_point -= curr_moduli_reciprocal.len - lim;
+                curr_moduli_reciprocal.left_shift(curr_moduli_reciprocal.len - lim);
+            }
+        }
     }
+    BigInteger q(a * curr_moduli_reciprocal);
+    q.left_shift(curr_fac_point);
+    BigInteger res(a - q * curr_moduli);
+    while (!(res < curr_moduli)) res = res - curr_moduli;
+    return res;
 }
 
 bool operator < (const BigInteger& a, const BigInteger& b) {
@@ -157,29 +176,26 @@ BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const Bi
     return res;
 }
 
-void BigInteger::random(const BigInteger& n, mt19937& mt) {
-    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
+void BigInteger::random(const BigInteger& n) {
     for (int i = 0; i < n.length; i++) this->num[i] = dist(mt) & LOW;
     trim();
     *this = *this % n;
 }
 
-void BigInteger::random(int unit_n, mt19937& mt) {
-    if (unit_n > this->unit_num) throw "Unit number too large.";
+void BigInteger::random(int unit_n) {
+    BigInteger res;
 
-    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
     int i = 0;
     for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
     for (; i < unit_num; i++) this->num[i] = 0;
     trim();
 }
 
-void BigInteger::random_prime(int unit_n, mt19937& mt) {
-    if (unit_n > this->unit_num) throw "Unit number too large.";
+void BigInteger::random_prime(int unit_n) {
 
     int i = 0;
     BigInteger TWO(this->unit_num, 2);
-    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
+    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW)
     for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
     for (; i < unit_num; i++) this->num[i] = 0;
 
@@ -223,10 +239,10 @@ void BigInteger::trim() {
     for (int j = 0; j < unit_num; j++) if (num[j] >= base) throw "Trim: a number exceeds LOW!";
 }
 
-// cut the lsb and drag the msb to lsb
-// origin: 0123456.78(reverse) when start is 6, get
-void BigInteger::cut_lsb(int start) {
-
+void BigInteger::left_shift(int unit_n) {
+    for (int i = 0; i < len - unit_n; i++) num[i] = num[i + unit_n];
+    for (int i = len - unit_n; i < len; i++) num[i] = 0;
+    len = len - unit_n;
 }
 
 bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
