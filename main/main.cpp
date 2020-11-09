@@ -1,7 +1,7 @@
 #include <iostream>
 #include <random>
 #include <fstream>
-#include "src/BigInteger.h"
+#include "../src/BigInteger.h"
 using namespace std;
 
 int main()
