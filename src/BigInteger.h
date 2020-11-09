@@ -51,16 +51,16 @@ public: // basic functions
     friend ostream& operator << (ostream& out, const BigInteger& a);
 
 public:
+    static void load_prime();
     void random(int bit_n, mt19937& mt); // random a number with bit_n bits
     void random_prime(int bit_n, mt19937& mt); // random a prime with bit_n bits
     void random(const BigInteger& n, mt19937& mt); // random a number less than n
-    static void load_prime();
+    bool miller_rabbin(int test_time, mt19937& mt); //miller rabbin test for prime
     static BigInteger binpow(const BigInteger& a, const BigInteger& b, const BigInteger& m);
 
 private:
     void trim(); // cut leading zeros
     void left_shift(int unit_n);
-    bool miller_rabbin(int test_time, mt19937& mt); //miller rabbin test for prime
 };
 
 #endif //RSA_BIGINTEGER_H

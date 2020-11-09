@@ -9,6 +9,7 @@
 
 const int init_prime_num = 1229;
 long long primes[init_prime_num];
+const int miller_rabbin_time = 10;
 const BigInteger One(1);
 const BigInteger Two(2);
 BigInteger curr_moduli;
@@ -204,7 +205,7 @@ void BigInteger::random_prime(int bit_n, mt19937& mt) {
         int j = 0;
         for (; j < init_prime_num; j++)
             if (*this % primes[j] == 0) break;
-        if (j == init_prime_num && this->miller_rabbin(10, mt)) break;
+        if (j == init_prime_num && this->miller_rabbin(miller_rabbin_time, mt)) break;
         else *this = *this + Two;
     }
 }
@@ -212,10 +213,10 @@ void BigInteger::random_prime(int bit_n, mt19937& mt) {
 void BigInteger::load_prime() {
     ifstream infile;
     infile.open("prime.txt");
-	if (!infile) {
-		cout << "Error: prime.txt does not exist!" << endl;
-		return;
-	}
+    if (!infile) {
+        cout << "Error: prime.txt does not exist!" << endl;
+        return;
+    }
     m_int data;
     for (int i = 0; i < init_prime_num; i++) {
         infile >> data;
@@ -252,7 +253,7 @@ bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
     int s = 0;
 
     // compute n_1 = d * 2 ^ s
-	while ((d.num[s / base_bits] & (1ll << (s % base_bits))) == 0) s++;
+    while ((d.num[s / base_bits] & (1ll << (s % base_bits))) == 0) s++;
     int unit_n = s / base_bits;
     int bit_n = s % base_bits;
     for (int i = unit_n; i < d.len; i++) d.num[i - unit_n] = d.num[i];

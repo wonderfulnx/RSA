@@ -106,15 +106,16 @@ def test_binpow(line1, line2):
         return False
     return True
 
-def test_prime(line1, line2):
-    if (line1):
-        a = int(line1, 16)
-        if not is_prime(a):
-            return False
-    if (line2):
-        b = int(line2, 16)
-        if not is_prime(b):
-            return False
+prime_num = 0
+def test_miller(line1, line2):
+    global prime_num
+    a = int(line1, 16)
+    ans = int(line2)
+    res = is_prime(a)
+    if res:
+        prime_num += 1
+    if res != ans:
+        return False
     return True
 
 if __name__ == "__main__":
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     line2 = f.readline()
     error_num = 0
     while line1 and line2:
-        if (test_binpow(line1, line2) == False):
+        if (test_miller(line1, line2) == False):
             error_num += 1
         line1 = f.readline()
         line2 = f.readline()
@@ -134,5 +135,6 @@ if __name__ == "__main__":
         print('No Error Found!')
     else:
         print(f'Found {error_num} Errors!')
+    print(f'There are {prime_num} prime numbers found.')
 
     f.close()
