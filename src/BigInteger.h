@@ -32,12 +32,14 @@ public:
 public:
     int len;
     bool is_neg;
-    m_int num[unit_num];
+    m_int* num;
 
 public: // basic functions
     BigInteger(m_int n = 0);
     BigInteger(const BigInteger& n);
-    ~BigInteger() {}
+    const BigInteger& operator=(m_int n);
+    const BigInteger& operator=(const BigInteger& n);
+    ~BigInteger() { delete[] num; num = NULL; }
 
     BigInteger operator-() const;
     friend BigInteger operator + (const BigInteger& a, const BigInteger& b);
@@ -57,7 +59,7 @@ public:
     void random(const BigInteger& n, mt19937& mt); // random a number less than n
     bool miller_rabbin(int test_time, mt19937& mt); //miller rabbin test for prime
     static BigInteger binpow(const BigInteger& a, const BigInteger& b, const BigInteger& m);
-    static BigInteger ex_gcd(BigInteger& a, BigInteger& b, BigInteger& x, BigInteger& y);
+    static BigInteger ex_gcd(const BigInteger& a, const BigInteger& b, BigInteger& x, BigInteger& y);
         
 private:
     void trim(); // cut leading zeros

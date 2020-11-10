@@ -10,8 +10,8 @@
 #include "../src/BigInteger.h"
 using namespace std;
 
-int RUN_TIME = 20000;
-int BIT_NUM = 768;
+int RUN_TIME = 10000;
+int BIT_NUM = 1024;
 string filename = "data.txt";
 random_device rd;
 mt19937 mt(rd());
@@ -73,6 +73,7 @@ void test_div() {
     for (int i = 0; i < RUN_TIME; i++) {
         a.random(BIT_NUM, mt);
         b.random(BIT_NUM / 2, mt);
+        while (b.len == 1 && b.num[0] == 0) { b.random(BIT_NUM / 2, mt); }
         outfile << a << " " << b << endl;
         outfile << a % b <<  endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -91,6 +92,7 @@ void test_binpow() {
         a.random(BIT_NUM / 2, mt);
         b.random(BIT_NUM / 2, mt);
         m.random(BIT_NUM / 2, mt);
+        while (m.len == 1 && m.num[0] == 0) { m.random(BIT_NUM / 2, mt); }
         outfile << a << " " << b << " " << m << endl;
         outfile << BigInteger::binpow(a, b, m) <<  endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
@@ -116,10 +118,10 @@ void test_ex_gcd() {
     BigInteger a, b, x, y, gcd;
     ofstream outfile;
     outfile.open(filename);
-
     for (int i = 0; i < RUN_TIME; i++) {
         a.random(BIT_NUM / 2, mt);
-        b.random(BIT_NUM / 2, mt);
+        b.random(BIT_NUM / 4, mt);
+        while (b.len == 1 && b.num[0] == 0) { b.random(BIT_NUM / 2, mt); }
         outfile << a << " " << b << endl;
         gcd = BigInteger::ex_gcd(a, b, x, y);
         outfile << x << " " << y << " " << gcd << endl;
@@ -137,7 +139,7 @@ int main()
     //test_mul();
     //test_div();
     //test_binpow();
-    //test_miller()
+    //test_miller();
     test_ex_gcd();
 
     cout << "finished, Please verify the result with python." << endl;

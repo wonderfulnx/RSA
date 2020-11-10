@@ -15,6 +15,7 @@ const BigInteger Two(2);
 BigInteger curr_moduli;
 BigInteger curr_moduli_reciprocal;
 int curr_fac_point;
+int curr_quo_sup;
 
 /*
  *  --------------------------------------
@@ -24,7 +25,8 @@ int curr_fac_point;
 BigInteger::BigInteger(m_int n) {
     is_neg = false;
     len = 0;
-    memset(num, 0, sizeof(num));
+    num = new m_int[unit_num];
+    memset(num, 0, sizeof(m_int) * unit_num);
     while (n) { num[len] = n % base; n /= base; len++; }
     if (len == 0) len = 1;
 }
@@ -32,7 +34,24 @@ BigInteger::BigInteger(m_int n) {
 BigInteger::BigInteger(const BigInteger &n) {
     is_neg = n.is_neg;
     len = n.len;
-    memcpy(num, n.num, sizeof(num));
+    num = new m_int[unit_num];
+    memcpy(num, n.num, sizeof(m_int) * unit_num);
+}
+
+const BigInteger& BigInteger::operator=(m_int n) {
+    is_neg = false;
+    len = 0;
+    memset(num, 0, sizeof(m_int) * unit_num);
+    while (n) { num[len] = n % base; n /= base; len++; }
+    if (len == 0) len = 1;
+    return *this;
+}
+
+const BigInteger& BigInteger::operator=(const BigInteger& n) {
+    is_neg = n.is_neg;
+    len = n.len;
+    memcpy(num, n.num, sizeof(m_int) * unit_num);
+    return *this;
 }
 
 /*
@@ -111,7 +130,6 @@ m_int operator % (const BigInteger& a, const m_int& b) {
 // b should be greater than 0
 BigInteger operator % (const BigInteger& a, const BigInteger& b) {
     if (b == 0) throw "Division by Zero!";
-    if (a < b) return a;
     if (!(b == curr_moduli)) {
         // change the saved curr_moduli to b
         curr_moduli = b;
@@ -131,10 +149,18 @@ BigInteger operator % (const BigInteger& a, const BigInteger& b) {
             }
         }
     }
+    if (a < b) { curr_quo_sup = 0; return a; }
+
     BigInteger q(a * curr_moduli_reciprocal);
     q.left_shift(curr_fac_point);
     BigInteger res(a - q * curr_moduli);
-    while (!(res < curr_moduli)) res = res - curr_moduli;
+    // res should be the reminder, but quo is not enough when b is divisor of a
+    // if 100 times is enough, curr_quo_sup should be no more than 1
+    curr_quo_sup = 0;
+    while (!(res < curr_moduli)) {
+        res = res - curr_moduli;
+        curr_quo_sup++;
+    }
     res.is_neg = a.is_neg;
     res.trim();
     return res;
@@ -214,8 +240,7 @@ bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
     return true;
 }
 
-BigInteger BigInteger::ex_gcd(BigInteger& a, BigInteger& b, BigInteger& x, BigInteger& y)
-{
+BigInteger BigInteger::ex_gcd(const BigInteger& a, const BigInteger& b, BigInteger& x, BigInteger& y) {
     if (b.len == 1 && b.num[0] == 0) {
         x = 1; y = 0;
         return a;
@@ -223,10 +248,12 @@ BigInteger BigInteger::ex_gcd(BigInteger& a, BigInteger& b, BigInteger& x, BigIn
     BigInteger tmp = a % b;
     BigInteger b_recip = curr_moduli_reciprocal;
     int fac_b = curr_fac_point;
+    int quo_sup_a_b = curr_quo_sup;
     BigInteger ans = ex_gcd(b, tmp, y, x);
     BigInteger a_b = a * b_recip;
     a_b.left_shift(fac_b);
     y = y - a_b * x;
+    while (quo_sup_a_b > 0) { y = y - x; quo_sup_a_b--; };
     return ans;
 }
 
@@ -290,10 +317,12 @@ void BigInteger::trim() {
 
     // for debug
     for (int j = 0; j < unit_num; j++) if (num[j] >= base) throw "Trim: a number exceeds LOW!";
+    if (len > unit_num) throw "Length of vector exceeded!";
 }
 
 void BigInteger::left_shift(int unit_n) {
-    for (int i = 0; i < len - unit_n; i++) num[i] = num[i + unit_n];
-    for (int i = len - unit_n; i < len; i++) num[i] = 0;
-    len = len - unit_n;
+    int rest_len = max(0, len - unit_n);
+    for (int i = 0; i < rest_len; i++) num[i] = num[i + unit_n];
+    for (int i = rest_len; i < len; i++) num[i] = 0;
+    len = rest_len;
 }

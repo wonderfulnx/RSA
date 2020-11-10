@@ -57,6 +57,17 @@ def is_prime(n, trials = 10):
 
     return True #通过所有测试，n很大可能为素数
 
+def ex_gcd(a,b):
+    if b == 0:
+        x = 1
+        y = 0
+        return x,y,a
+    (x,y,r) = ex_gcd(b,a % b)
+    tmp = x
+    x = y
+    y = tmp - int(a/b)*y
+    return (x,y,r)
+
 ###################################################################################
 ####################                 Tests              ###########################
 ###################################################################################
@@ -118,6 +129,18 @@ def test_miller(line1, line2):
         return False
     return True
 
+def test_ex_gcd(line1, line2):
+    num = line1.split()
+    ans = line2.split()
+    a = int(num[0], 16)
+    b = int(num[1], 16)
+    # x, y, gcd = ex_gcd(a, b)
+    x_, y_, gcd_ = int(ans[0], 16), int(ans[1], 16), int(ans[2], 16)
+    # if x != x_ or y != y_ or gcd != gcd_ or x_ * a + y_ * b != gcd_:
+    if x_ * a + y_ * b != gcd_:
+        return False
+    return True
+
 if __name__ == "__main__":
     file_path = 'test/data.txt'
     f = open(file_path)
@@ -126,7 +149,7 @@ if __name__ == "__main__":
     line2 = f.readline()
     error_num = 0
     while line1 and line2:
-        if (test_miller(line1, line2) == False):
+        if (test_ex_gcd(line1, line2) == False):
             error_num += 1
         line1 = f.readline()
         line2 = f.readline()

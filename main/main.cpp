@@ -10,13 +10,13 @@ int main()
     mt19937 mt(rd());
     BigInteger::load_prime();
 
-    BigInteger a(0x614de8d0);
-    BigInteger b(0xefba);
-    BigInteger c(0xFFFF);
+    BigInteger a(198);
+    BigInteger b(252);
+    BigInteger x, y;
 
-    a.random_prime(512, mt);
-    cout << a << endl;
-
-
+    // a.random_prime(512, mt);
+    // cout << a << endl;
+    BigInteger::ex_gcd(a, b, x, y);
+    
     return 0;
 }
