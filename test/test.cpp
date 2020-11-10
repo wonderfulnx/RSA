@@ -124,6 +124,8 @@ void test_ex_gcd() {
         while (b.len == 1 && b.num[0] == 0) { b.random(BIT_NUM / 2, mt); }
         outfile << a << " " << b << endl;
         gcd = BigInteger::ex_gcd(a, b, x, y);
+        if (!(a * x + b * y == gcd))
+            cout << "Wrong" << endl;
         outfile << x << " " << y << " " << gcd << endl;
         if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
     }

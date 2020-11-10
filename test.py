@@ -57,16 +57,15 @@ def is_prime(n, trials = 10):
 
     return True #通过所有测试，n很大可能为素数
 
-def ex_gcd(a,b):
-    if b == 0:
+def ex_gcd(a,b,x,y):
+    d = a
+    if b != 0:
+        d,y,x = ex_gcd(b,a%b,y,x)
+        y -= (a//b)*x
+    else:
         x = 1
         y = 0
-        return x,y,a
-    (x,y,r) = ex_gcd(b,a % b)
-    tmp = x
-    x = y
-    y = tmp - int(a/b)*y
-    return (x,y,r)
+    return d,x,y
 
 ###################################################################################
 ####################                 Tests              ###########################
@@ -134,10 +133,10 @@ def test_ex_gcd(line1, line2):
     ans = line2.split()
     a = int(num[0], 16)
     b = int(num[1], 16)
-    # x, y, gcd = ex_gcd(a, b)
+    gcd, x, y = ex_gcd(a, b, 0, 0)
     x_, y_, gcd_ = int(ans[0], 16), int(ans[1], 16), int(ans[2], 16)
-    # if x != x_ or y != y_ or gcd != gcd_ or x_ * a + y_ * b != gcd_:
-    if x_ * a + y_ * b != gcd_:
+    # if gcd != gcd_ or x_ * a + y_ * b != gcd_ or (x - x_) / b != (y - y_) / a: # a more forgiving check
+    if gcd != gcd_ or x_ * a + y_ * b != gcd_ or x != x_ or y != y_:
         return False
     return True
 
