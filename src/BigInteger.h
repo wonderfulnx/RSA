@@ -57,7 +57,8 @@ public:
     void random(const BigInteger& n, mt19937& mt); // random a number less than n
     bool miller_rabbin(int test_time, mt19937& mt); //miller rabbin test for prime
     static BigInteger binpow(const BigInteger& a, const BigInteger& b, const BigInteger& m);
-
+    static BigInteger ex_gcd(BigInteger& a, BigInteger& b, BigInteger& x, BigInteger& y);
+        
 private:
     void trim(); // cut leading zeros
     void left_shift(int unit_n);

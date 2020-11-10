@@ -104,10 +104,13 @@ m_int operator % (const BigInteger& a, const m_int& b) {
     for (int i = a.len - 1; i >= 0; i--) {
         res = (a.num[i] + res * base) % b;
     }
+    if (a.is_neg) res = -res;
     return res;
 }
 
+// b should be greater than 0
 BigInteger operator % (const BigInteger& a, const BigInteger& b) {
+    if (b == 0) throw "Division by Zero!";
     if (a < b) return a;
     if (!(b == curr_moduli)) {
         // change the saved curr_moduli to b
@@ -132,6 +135,8 @@ BigInteger operator % (const BigInteger& a, const BigInteger& b) {
     q.left_shift(curr_fac_point);
     BigInteger res(a - q * curr_moduli);
     while (!(res < curr_moduli)) res = res - curr_moduli;
+    res.is_neg = a.is_neg;
+    res.trim();
     return res;
 }
 
@@ -177,6 +182,52 @@ BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const Bi
     }
     res.trim();
     return res;
+}
+
+bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
+    if (*this < 3) return (*this) == 2;
+    BigInteger n_1(*this - One), d(n_1), a, x;
+    int s = 0;
+
+    // compute n_1 = d * 2 ^ s
+    while ((d.num[s / base_bits] & (1ll << (s % base_bits))) == 0) s++;
+    int unit_n = s / base_bits;
+    int bit_n = s % base_bits;
+    for (int i = unit_n; i < d.len; i++) d.num[i - unit_n] = d.num[i];
+    for (int i = d.len - unit_n; i < d.len; i++) d.num[i] = 0;
+    for (int i = 0; i < d.len; i++)
+        d.num[i] = (d.num[i] >> bit_n) | ((d.num[i + 1] & ((1ll << bit_n) - 1)) << (base_bits - bit_n));
+    d.trim();
+
+    // if test time is k, then the error rate is 1/4^(k)
+    for (int i = 0, r; i < test_time; i++) {
+        a.random(*this - Two, mt); a = a + Two;
+        x = binpow(a, d, *this);
+        if (x == 1 || x == n_1) continue;
+        for (r = 0; r < s - 1; r++) {
+            x = x * x % (*this);
+            if (x == 1) return false;
+            if (x == n_1) break;
+        }
+        if (r >= s - 1) return false;
+    }
+    return true;
+}
+
+BigInteger BigInteger::ex_gcd(BigInteger& a, BigInteger& b, BigInteger& x, BigInteger& y)
+{
+    if (b.len == 1 && b.num[0] == 0) {
+        x = 1; y = 0;
+        return a;
+    }
+    BigInteger tmp = a % b;
+    BigInteger b_recip = curr_moduli_reciprocal;
+    int fac_b = curr_fac_point;
+    BigInteger ans = ex_gcd(b, tmp, y, x);
+    BigInteger a_b = a * b_recip;
+    a_b.left_shift(fac_b);
+    y = y - a_b * x;
+    return ans;
 }
 
 void BigInteger::random(int bit_n, mt19937& mt) {
@@ -246,37 +297,3 @@ void BigInteger::left_shift(int unit_n) {
     for (int i = len - unit_n; i < len; i++) num[i] = 0;
     len = len - unit_n;
 }
-
-bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
-    if (*this < 3) return (*this) == 2;
-    BigInteger n_1(*this - One), d(n_1), a, x;
-    int s = 0;
-
-    // compute n_1 = d * 2 ^ s
-    while ((d.num[s / base_bits] & (1ll << (s % base_bits))) == 0) s++;
-    int unit_n = s / base_bits;
-    int bit_n = s % base_bits;
-    for (int i = unit_n; i < d.len; i++) d.num[i - unit_n] = d.num[i];
-    for (int i = d.len - unit_n; i < d.len; i++) d.num[i] = 0;
-    for (int i = 0; i < d.len; i++)
-        d.num[i] = (d.num[i] >> bit_n) | ((d.num[i + 1] & ((1ll << bit_n) - 1)) << (base_bits - bit_n));
-    d.trim();
-
-    // if test time is k, then the error rate is 1/4^(k)
-    for (int i = 0, r; i < test_time; i++) {
-        a.random(*this - Two, mt); a = a + Two;
-        x = binpow(a, d, *this);
-        if (x == 1 || x == n_1) continue;
-        for (r = 0; r < s - 1; r++) {
-            x = x * x % (*this);
-            if (x == 1) return false;
-            if (x == n_1) break;
-        }
-        if (r >= s - 1) return false;
-    }
-    return true;
-}
-
-
-
-

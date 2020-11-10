@@ -112,6 +112,22 @@ void test_miller() {
     outfile.close();
 }
 
+void test_ex_gcd() {
+    BigInteger a, b, x, y, gcd;
+    ofstream outfile;
+    outfile.open(filename);
+
+    for (int i = 0; i < RUN_TIME; i++) {
+        a.random(BIT_NUM / 2, mt);
+        b.random(BIT_NUM / 2, mt);
+        outfile << a << " " << b << endl;
+        gcd = BigInteger::ex_gcd(a, b, x, y);
+        outfile << x << " " << y << " " << gcd << endl;
+        if (i % (RUN_TIME / 10) == 0) cout << "done with " << i << endl;
+    }
+    outfile.close();
+}
+
 int main()
 {
     BigInteger::load_prime();
@@ -121,7 +137,8 @@ int main()
     //test_mul();
     //test_div();
     //test_binpow();
-    test_miller();
+    //test_miller()
+    test_ex_gcd();
 
     cout << "finished, Please verify the result with python." << endl;
     return 0;
