@@ -3,74 +3,65 @@
 //
 
 #include "BigInteger.h"
-#include <random>
 #include <fstream>
+#include <string>
+#include <random>
 
-vector<BigInteger> PRIMES;
-
-// Int is stored reversed in vector, the lsb is on the head and the msb is on the tail
+const int init_prime_num = 1229;
+long long primes[init_prime_num];
+const int miller_rabbin_time = 10;
+const BigInteger One(1);
+const BigInteger Two(2);
+BigInteger curr_moduli;
+BigInteger curr_moduli_reciprocal;
+int curr_fac_point;
+int curr_quo_sup;
 
 /*
  *  --------------------------------------
  *  Construction Function Area
  *  --------------------------------------
  */
-BigInteger::BigInteger(int unit_n) {
-    unit_num = unit_n;
-    length = 1;
+BigInteger::BigInteger(m_int n) {
     is_neg = false;
-    num = vector<m_uint>(unit_num);
+    len = 0;
+    num = new m_int[unit_num];
+    memset(num, 0, sizeof(m_int) * unit_num);
+    while (n) { num[len] = n % base; n /= base; len++; }
+    if (len == 0) len = 1;
 }
 
-BigInteger::BigInteger(int unit_n, m_uint n) {
-    unit_num = unit_n;
-    is_neg = false;
-    num = vector<m_uint>(unit_num);
-    num[0] = get_low(n);
-    num[1] = get_hig(n);
-    if (num[1] == 0) length = 1;
-    else length = 2;
-}
-
-BigInteger::BigInteger(int unit_n, const BigInteger &n) {
-    unit_num = unit_n;
-    is_neg = false;
-    length = 1;
-    num = vector<m_uint>(unit_num);
-    *this = n;
-}
-
-const BigInteger& BigInteger::operator=(const BigInteger &n) {
-    if (n.unit_num != unit_num) throw "Failed to assign, unit num not the same!";
-    length = n.length;
+BigInteger::BigInteger(const BigInteger &n) {
     is_neg = n.is_neg;
-    for (int i = 0; i < unit_num; i++) num[i] = n.num[i];
+    len = n.len;
+    num = new m_int[unit_num];
+    memcpy(num, n.num, sizeof(m_int) * unit_num);
+}
+
+const BigInteger& BigInteger::operator=(m_int n) {
+    is_neg = false;
+    len = 0;
+    memset(num, 0, sizeof(m_int) * unit_num);
+    while (n) { num[len] = n % base; n /= base; len++; }
+    if (len == 0) len = 1;
+    return *this;
+}
+
+const BigInteger& BigInteger::operator=(const BigInteger& n) {
+    is_neg = n.is_neg;
+    len = n.len;
+    memcpy(num, n.num, sizeof(m_int) * unit_num);
     return *this;
 }
 
 /*
  *  --------------------------------------
- *  Basic Public Function
- *  --------------------------------------
- */
-BigInteger BigInteger::abs() const {
-    BigInteger ans(*this);
-    ans.is_neg = false;
-    return ans;
-}
-
-bool BigInteger::neg() const { return is_neg; }
-
-int BigInteger::size() const { return length; }
-
-/*
- *  --------------------------------------
- *  Public Operator Area
+ *  Operators
  *  --------------------------------------
  */
 BigInteger BigInteger::operator-() const {
-    BigInteger ans(this->unit_num, *this);
-    if (length == 1 && ans.num[0] == 0) ans.is_neg = false;
+    BigInteger ans(*this);
+    if (ans.len == 1 && ans.num[0] == 0) ans.is_neg = false;
     else ans.is_neg = !ans.is_neg;
     return ans;
 }
@@ -78,16 +69,14 @@ BigInteger BigInteger::operator-() const {
 BigInteger operator + (const BigInteger& a, const BigInteger& b) {
     if (b.is_neg) return a - (-b);
     if (a.is_neg) return b - (-a);
-    BigInteger ans(max(a.unit_num, b.unit_num));
-    int len = max(a.length, b.length);
+    BigInteger ans;
+    int len = max(a.len, b.len);
     for (int i = 0; i < len; i++) {
-        BigInteger::m_uint aa = (i < a.length)? a.num[i] : 0;
-        BigInteger::m_uint bb = (i < b.length)? b.num[i] : 0;
-        ans.num[i] += aa + bb;
-        if (ans.num[i] > BigInteger::LOW) {
+        ans.num[i] += a.num[i] + b.num[i];
+        if (ans.num[i] >= base) {
             // do carry only when possible
-            if (i + 1 < ans.unit_num) ans.num[i + 1] += 1;
-            ans.num[i] = BigInteger::get_low(ans.num[i]);
+            if (i + 1 < unit_num) ans.num[i + 1] += 1;
+            ans.num[i] -= base;
         }
     }
     ans.trim();
@@ -99,76 +88,91 @@ BigInteger operator - (const BigInteger& a, const BigInteger& b) {
     if (a.is_neg) return -((-a) + b);
     if (a < b) return -(b - a);
 
-    BigInteger ans(max(a.unit_num, b.unit_num));
-    int len = max(a.length, b.length);
-    unsigned int carry = 0;
+    BigInteger ans;
+    int len = max(a.len, b.len);
     for (int i = 0; i < len; i++) {
-        BigInteger::m_uint aa = (i < a.length)? a.num[i] : 0;
-        BigInteger::m_uint bb = (i < b.length)? b.num[i] : 0;
-        if (aa < bb + carry) {
-            // requires carry
-            ans.num[i] = BigInteger::BASE + aa - bb - carry;
-            carry = 1;
-        }
-        else {
-            ans.num[i] = aa - bb - carry;
-            carry = 0;
+        ans.num[i] += a.num[i] - b.num[i];
+        if (ans.num[i] < 0){
+            // do carry only when possible
+            if (i + 1 < unit_num) ans.num[i + 1] -= 1;
+            ans.num[i] += base;
         }
     }
     ans.trim();
     return ans;
 }
 
-// Multiple should only be done when a.unit_num == b.unit_num
 BigInteger operator * (const BigInteger& a, const BigInteger& b) {
-    if (a.unit_num != b.unit_num) throw "Multiple numbers must have the same unit num.";
-
-    BigInteger ans(a.unit_num);
+    BigInteger ans;
     ans.is_neg = a.is_neg ^ b.is_neg;
 
-    int len = min(a.length + b.length, a.unit_num);
+    int len = a.len + b.len;
     for (int i = 0; i < len; i++) {
-        // every time reaches i, check if carry required, make sure num[i] is lower than BASE
-        if (ans.num[i] > BigInteger::LOW) {
-            if (i + 1 < ans.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]); // only if carry is able to take place, we do carry
-            ans.num[i] = BigInteger::get_low(ans.num[i]);
+        for (int j = 0; j <= i; j++) ans.num[i] += a.num[j] * b.num[i - j];
+        if (ans.num[i] >= base) {
+            if (i + 1 < unit_num) ans.num[i + 1] += ans.num[i] / base;
+            ans.num[i] %= base;
         }
-        for (int j = 0; j <= i; j++) {
-            // start to compute number in num[i].
-            // num[i] is sure to be lower than BASE currently, this += will not cause a overflow
-            ans.num[i] += a.num[j] * b.num[i - j];
-            // do the same carry again every time, same as up there
-            if (ans.num[i] > BigInteger::LOW) {
-                if (i + 1 < ans.unit_num) ans.num[i + 1] += ans.get_hig(ans.num[i]);
-                ans.num[i] = BigInteger::get_low(ans.num[i]);
+    }
+    ans.trim();
+    return ans;
+}
+
+m_int operator % (const BigInteger& a, const m_int& b) {
+    m_int res = 0;
+    for (int i = a.len - 1; i >= 0; i--) {
+        res = (a.num[i] + res * base) % b;
+    }
+    if (a.is_neg) res = -res;
+    return res;
+}
+
+// b should be greater than 0
+BigInteger operator % (const BigInteger& a, const BigInteger& b) {
+    if (b == 0) throw "Division by Zero!";
+    if (!(b == curr_moduli)) {
+        // change the saved curr_moduli to b
+        curr_moduli = b;
+        curr_moduli_reciprocal = 1; // this is a big float
+        curr_fac_point = curr_moduli.len;
+        int lim = curr_moduli.len << 1;
+        for (int i = 0; i < 100; i++) {
+            // compute an(2-b*an)
+            BigInteger two_float;
+            two_float.len = curr_fac_point + 1;
+            two_float.num[curr_fac_point] = 2;
+            curr_moduli_reciprocal = curr_moduli_reciprocal * (two_float - curr_moduli * curr_moduli_reciprocal);
+            curr_fac_point <<= 1; // two float multiple, fac point changes
+            if (curr_moduli_reciprocal.len > lim) {
+                curr_fac_point -= curr_moduli_reciprocal.len - lim;
+                curr_moduli_reciprocal.left_shift(curr_moduli_reciprocal.len - lim);
             }
         }
     }
-    ans.trim();
-    return ans;
-}
+    if (a < b) { curr_quo_sup = 0; return a; }
 
-BigInteger operator / (const BigInteger& a, const BigInteger& b) {
-    if (a.unit_num != b.unit_num) throw "Division numbers must have the same unit num.";
-    BigInteger c(a.unit_num), d(a.unit_num);
-    div(a, b, c, d);
-    return c;
-}
-
-BigInteger operator % (const BigInteger& a, const BigInteger& b) {
-    if (a.unit_num != b.unit_num) throw "Division numbers must have the same unit num.";
-    BigInteger c(a.unit_num), d(a.unit_num);
-    div(a, b, c, d);
-    return d;
+    BigInteger q(a * curr_moduli_reciprocal);
+    q.left_shift(curr_fac_point);
+    BigInteger res(a - q * curr_moduli);
+    // res should be the reminder, but quo is not enough when b is divisor of a
+    // if 100 times is enough, curr_quo_sup should be no more than 1
+    curr_quo_sup = 0;
+    while (!(res < curr_moduli)) {
+        res = res - curr_moduli;
+        curr_quo_sup++;
+    }
+    res.is_neg = a.is_neg;
+    res.trim();
+    return res;
 }
 
 bool operator < (const BigInteger& a, const BigInteger& b) {
     if (a.is_neg && !b.is_neg) return true;
     if (!a.is_neg && b.is_neg) return false;
     if (!a.is_neg && !b.is_neg) {
-        if (a.length < b.length) return true;
-        if (a.length > b.length) return false;
-        for (int i = a.length - 1; i >= 0; i--){
+        if (a.len < b.len) return true;
+        if (a.len > b.len) return false;
+        for (int i = a.len - 1; i >= 0; i--){
             if (a.num[i] > b.num[i]) return false;
             if (a.num[i] < b.num[i]) return true;
         }
@@ -177,67 +181,11 @@ bool operator < (const BigInteger& a, const BigInteger& b) {
     else return -b < -a;
 }
 
-bool operator < (const BigInteger& a, const BigInteger::m_uint &b) {
-    if (a.is_neg) return true;
-    if (a.length > 1) return false;
-    return a.num[0] < b;
-}
-
-bool operator > (const BigInteger& a, const BigInteger::m_uint &b) {
-    if (a.is_neg) return false;
-    if (a.length > 1) return true;
-    return a.num[0] > b;
-}
-
 ostream& operator << (ostream& out, const BigInteger& a) {
     if (a.is_neg) out << "-";
     out << hex << "0x";
-    for (int i = a.length - 1; i >= 0; i--) { out.fill('0'); out.width(4); out << a.num[i]; }
+    for (int i = a.len - 1; i >= 0; i--) { out.fill('0'); out.width(base_bits / 4); out << a.num[i]; }
     return out;
-}
-
-const BigInteger& BigInteger::operator<<=(const BigInteger::m_uint &b) {
-    // left shift, only support no more than BITS_PER_UNIT.
-    // remember number is stored reversely
-    if (b > BITS_PER_UNIT) throw "left shift only support no more than BITS_PER_UNIT bit.";
-    BigInteger::m_uint mask = ((1 << b) - 1) << BigInteger::BITS_PER_UNIT;
-    BigInteger::m_uint carry = 0;
-    BigInteger::m_uint temp = 0;
-    for (int i = 0; i < unit_num; i++) {
-        temp = num[i] << b;
-        num[i] = BigInteger::get_low(temp) | carry;
-        carry = (temp & mask) >> BigInteger::BITS_PER_UNIT;
-    }
-    trim();
-    return *this;
-}
-
-const BigInteger& BigInteger::operator>>=(const BigInteger::m_uint &b) {
-    // right shift, only support no more than BITS_PER_UNIT.
-    // remember number is stored reversely
-    if (b > BITS_PER_UNIT) throw "right shift only support no more than BITS_PER_UNIT bit.";
-    BigInteger::m_uint mask = ((1 << b) - 1);
-    BigInteger::m_uint carry = 0;
-    BigInteger::m_uint n_car = 0;
-    for (int i = unit_num - 1; i >= 0; i--) {
-        n_car = (num[i] & mask) << (BigInteger::BITS_PER_UNIT - b);
-        num[i] = BigInteger::get_low(num[i] >> b) | carry;
-        carry = n_car;
-    }
-    trim();
-    return *this;
-}
-
-BigInteger operator<<(const BigInteger &a, const BigInteger::m_uint &b) {
-    BigInteger ans(a.unit_num, a);
-    ans <<= b;
-    return ans;
-}
-
-BigInteger operator>>(const BigInteger &a, const BigInteger::m_uint &b) {
-    BigInteger ans(a.unit_num, a);
-    ans >>= b;
-    return ans;
 }
 
 /*
@@ -247,64 +195,110 @@ BigInteger operator>>(const BigInteger &a, const BigInteger::m_uint &b) {
  */
 BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const BigInteger &m) {
     // quick pow to get a * b % m
-    if (a.unit_num != b.unit_num || a.unit_num != m.unit_num) throw "BinPow can only be done with the same unit num.";
-    BigInteger aa(a.unit_num ,a % m), bb(b.unit_num, b);
-    BigInteger res(a.unit_num, 1);
-    while (bb > 0) {
-        if (bb.num[0] & 1) res = res * aa % m;
+    BigInteger aa(a % m);
+    BigInteger res(1);
+    m_int cur_unit = 0, tmp = 1;
+    while (cur_unit < b.len) {
+        if (b.num[cur_unit] & tmp) res = res * aa % m;
         aa = aa * aa % m;
-        bb >>= 1;
+        tmp <<= 1;
+        if (tmp >= base) tmp = 1, cur_unit++;
+        // highest unit, no longer need to compute
+        if (cur_unit == b.len - 1 && tmp > b.num[cur_unit]) break;
     }
     res.trim();
     return res;
 }
 
-void BigInteger::random(const BigInteger& n, mt19937& mt) {
-    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
-    for (int i = 0; i < n.length; i++) this->num[i] = dist(mt) & LOW;
+bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
+    if (*this < 3) return (*this) == 2;
+    BigInteger n_1(*this - One), d(n_1), a, x;
+    int s = 0;
+
+    // compute n_1 = d * 2 ^ s
+    while ((d.num[s / base_bits] & (1ll << (s % base_bits))) == 0) s++;
+    int unit_n = s / base_bits;
+    int bit_n = s % base_bits;
+    for (int i = unit_n; i < d.len; i++) d.num[i - unit_n] = d.num[i];
+    for (int i = d.len - unit_n; i < d.len; i++) d.num[i] = 0;
+    for (int i = 0; i < d.len; i++)
+        d.num[i] = (d.num[i] >> bit_n) | ((d.num[i + 1] & ((1ll << bit_n) - 1)) << (base_bits - bit_n));
+    d.trim();
+
+    // if test time is k, then the error rate is 1/4^(k)
+    for (int i = 0, r; i < test_time; i++) {
+        a.random(*this - Two, mt); a = a + Two;
+        x = binpow(a, d, *this);
+        if (x == 1 || x == n_1) continue;
+        for (r = 0; r < s - 1; r++) {
+            x = x * x % (*this);
+            if (x == 1) return false;
+            if (x == n_1) break;
+        }
+        if (r >= s - 1) return false;
+    }
+    return true;
+}
+
+BigInteger BigInteger::ex_gcd(const BigInteger& a, const BigInteger& b, BigInteger& x, BigInteger& y) {
+    if (b.len == 1 && b.num[0] == 0) {
+        x = 1; y = 0;
+        return a;
+    }
+    BigInteger tmp = a % b;
+    BigInteger b_recip = curr_moduli_reciprocal;
+    int fac_b = curr_fac_point;
+    int quo_sup_a_b = curr_quo_sup;
+    BigInteger ans = ex_gcd(b, tmp, y, x);
+    BigInteger a_b = a * b_recip;
+    a_b.left_shift(fac_b);
+    y = y - a_b * x;
+    while (quo_sup_a_b > 0) { y = y - x; quo_sup_a_b--; };
+    return ans;
+}
+
+void BigInteger::random(int bit_n, mt19937& mt) {
+    int i = 0;
+    uniform_int_distribution<m_int> dist(0, base - 1);
+    for (; i < bit_n / base_bits; i++)
+        num[i] = dist(mt) & (base - 1);
+    num[i] = dist(mt) & ((1ll << (bit_n % base_bits)) - 1);
     trim();
+}
+
+void BigInteger::random(const BigInteger& n, mt19937& mt) {
+    this->random(n.len * base_bits, mt);
     *this = *this % n;
 }
 
-void BigInteger::random(int unit_n, mt19937& mt) {
-    if (unit_n > this->unit_num) throw "Unit number too large.";
-
-    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
-    int i = 0;
-    for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
-    for (; i < unit_num; i++) this->num[i] = 0;
-    trim();
-}
-
-void BigInteger::random_prime(int unit_n, mt19937& mt) {
-    if (unit_n > this->unit_num) throw "Unit number too large.";
-
-    int i = 0;
-    BigInteger TWO(this->unit_num, 2);
-    uniform_int_distribution<BigInteger::m_uint> dist(0, LOW);
-    for (; i < unit_n; i++) this->num[i] = dist(mt) & LOW;
-    for (; i < unit_num; i++) this->num[i] = 0;
-
+void BigInteger::random_prime(int bit_n, mt19937& mt) {
+    this->random(bit_n, mt);
     while (1) {
-        this->num[unit_n - 1] |= (1 << (BITS_PER_UNIT - 1));
+        // set the highest bit and lowest bit to 1
+        if (bit_n % base_bits) this->num[len - 1] |= (1ll << (bit_n % base_bits - 1));
+        else this->num[len - 1] |= (base >> 1);
         this->num[0] |= 1;
         trim();
 
         int j = 0;
-        for (; j < PRIMES.size(); j++)
-            if (*this % PRIMES[i] == 0) break;
-        if (j == PRIMES.size() && this->miller_rabbin(10, mt)) break;
-        else *this = *this + TWO;
+        for (; j < init_prime_num; j++)
+            if (*this % primes[j] == 0) break;
+        if (j == init_prime_num && this->miller_rabbin(miller_rabbin_time, mt)) break;
+        else *this = *this + Two;
     }
 }
 
-void BigInteger::load_prime(int unit_n) {
+void BigInteger::load_prime() {
     ifstream infile;
     infile.open("prime.txt");
-    BigInteger::m_uint data;
-    while (!infile.eof()) {
+    if (!infile) {
+        cout << "Error: prime.txt does not exist!" << endl;
+        return;
+    }
+    m_int data;
+    for (int i = 0; i < init_prime_num; i++) {
         infile >> data;
-        if (data) PRIMES.push_back(BigInteger(unit_n, data));
+        primes[i] = data;
     }
     infile.close();
 }
@@ -319,104 +313,16 @@ void BigInteger::trim() {
     int i = unit_num - 1;
     for (; i > 0; i--)
         if (num[i] != 0) break;
-    length = i + 1;
+    len = i + 1;
 
     // for debug
-    for (int j = 0; j < unit_num; j++) if (num[j] > LOW) throw "Trim: a number exceeds LOW!";
+    for (int j = 0; j < unit_num; j++) if (num[j] >= base) throw "Trim: a number exceeds LOW!";
+    if (len > unit_num) throw "Length of vector exceeded!";
 }
 
-int greater_eq(const BigInteger &a, const BigInteger &b, int last_dg) {
-    // Dividend a and divisor b. Take last_dg as the lowest bit in a, return if a can sub b
-    // 2 -> overlong, 1 -> able to sub, 0 -> not able to sub
-    int len = b.length;
-    if (last_dg + len < a.unit_num && a.num[last_dg + len] != 0) return 2;
-    // start from high bit to low bit
-    for (int i = len - 1; i >= 0; i--) {
-        if (a.num[last_dg + i] > b.num[i]) return 1;
-        if (a.num[last_dg + i] < b.num[i]) return 0;
-    }
-    return 1; // true if equal
+void BigInteger::left_shift(int unit_n) {
+    int rest_len = max(0, len - unit_n);
+    for (int i = 0; i < rest_len; i++) num[i] = num[i + unit_n];
+    for (int i = rest_len; i < len; i++) num[i] = 0;
+    len = rest_len;
 }
-
-void div(const BigInteger &a, const BigInteger &b, BigInteger &c, BigInteger &d) {
-    // for div function, all a, b, c, and d should have the same unit_num;
-    if (a.unit_num != b.unit_num || a.unit_num != c.unit_num || a.unit_num != d.unit_num) throw "Multiple numbers must have the same unit num.";
-    if (b.length == 1 && b.num[0] == 0) throw "Division by zero!";
-
-    vector<BigInteger::m_uint> tmp(b.length + 1); // store the temp res of b.length * over_number
-    // c is quotient and d is remainder
-    for (int i = 0; i < a.length; i++) d.num[i] = a.num[i];
-    for (int i = a.length - b.length; i >= 0; i--) {
-        while (greater_eq(d, b, i) == 2) {
-            // over long. we do ``d -= b * over_number'' and ``c[i] += over_number''
-            BigInteger::m_uint over_num = d.num[i + b.length];
-            // step 1: compute b * over_number
-            for (int k = 0; k < b.length; k++) tmp[k] = b.num[k] * over_num;
-            tmp[b.length] = 0;
-            for (int k = 0; k < b.length; k++) if (tmp[k] > BigInteger::LOW) {
-                tmp[k + 1] += BigInteger::get_hig(tmp[k]);
-                tmp[k] = BigInteger::get_low(tmp[k]);
-            }
-            // step 2: d -= res, but take i as start
-            unsigned int carry = 0;
-            for (int j = 0; j <= b.length; j++) {
-                if (d.num[i + j] < tmp[j] + carry) {
-                    // requires carry
-                    d.num[i + j] = d.num[i + j] + BigInteger::BASE - tmp[j] - carry;
-                    carry = 1;
-                }
-                else d.num[i + j] -= tmp[j] + carry, carry = 0;
-            }
-            c.num[i] += over_num;
-        }
-
-        while (greater_eq(d, b, i) == 1) {
-            // start to subtract
-            unsigned int carry = 0;
-            for (int j = 0; j < b.length; j++) {
-                // a in-place sub
-                if (d.num[i + j] < b.num[j] + carry) {
-                    // requires carry
-                    d.num[i + j] = d.num[i + j] + BigInteger::BASE - b.num[j] - carry;
-                    carry = 1;
-                }
-                else d.num[i + j] -= b.num[j] + carry, carry = 0;
-            }
-            if (i + b.length < a.length) d.num[i + b.length] -= carry;
-            c.num[i] += 1;
-        }
-    }
-
-    c.is_neg = a.is_neg ^ b.is_neg;
-    d.is_neg = a.is_neg;
-    c.trim(); d.trim();
-}
-
-bool BigInteger::miller_rabbin(int test_time, mt19937& mt) {
-    if (*this < 3) return (*this) == 2;
-    BigInteger ONE(this->unit_num, 1);
-    BigInteger TWO(this->unit_num, 2);
-    BigInteger n_1(this->unit_num, *this - ONE);
-    BigInteger d(this->unit_num, n_1);
-    BigInteger a(this->unit_num);
-    BigInteger x(this->unit_num);
-    int s = 0;
-
-    while ((d.num[0] & 1) == 0) d >>= 1, s++;
-    // if test time is k, then the error rate is 1/4^(k)
-    for (int i = 0, r; i < test_time; i++) {
-        a.random(*this - TWO, mt); a = a + TWO;
-        x = binpow(a, d, *this);
-        if (x == 1 || x == n_1) continue;
-        for (r = 0; r < s - 1; r++) {
-            x = x * x % (*this);
-            if (x == 1) return false;
-            if (x == n_1) break;
-        }
-        if (r >= s - 1) return false;
-    }
-    return true;
-}
-
-
-

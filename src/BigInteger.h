@@ -7,82 +7,63 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cstdio>
 #include <random>
 using namespace std;
 
+typedef long long m_int;
+const int base_bits = 24;
+const int max_bit_num = 2048;
+const long long base = 1ll << base_bits;
+const int unit_num = max_bit_num * 4 / base_bits + 10;
+
+/*
+ * Big Integer Class
+ * 
+ * - Change max_bit_num to supprt higher bits
+ * - base bits are used to store number
+ * - primes are predefined.
+ * - Int is stored reversed in vector
+ * - The lsb is on the head and the msb is on the tail
+ */
 class BigInteger {
 public:
-    // 32 bits in one unit, takes half of it to store number
-    typedef uint32_t m_uint;
-    static const int BITS_PER_UNIT = 16;
-    static const m_uint LOW = 0x0000FFFF;
-    static const m_uint HIG = 0xFFFF0000;
-    static const m_uint BASE = 0x00010000; // BASE is low + 1
 
-private:
-    inline static m_uint get_low(m_uint a) {return a & LOW;}
-    inline static m_uint get_hig(m_uint a) {return a >> 16u;}
-
-private:
-    // requires unit num, 1 unit means able to store a half m_uint
-    int unit_num;
-    int length;
-    bool is_neg; // is_neg = 1 means a negative number
-    vector<m_uint> num;
+public:
+    int len;
+    bool is_neg;
+    m_int* num;
 
 public: // basic functions
-    BigInteger(int unit_n);
-    BigInteger(int unit_n, m_uint n);
-    BigInteger(int unit_n, const BigInteger& n);
+    BigInteger(m_int n = 0);
+    BigInteger(const BigInteger& n);
+    const BigInteger& operator=(m_int n);
+    const BigInteger& operator=(const BigInteger& n);
+    ~BigInteger() { delete[] num; num = NULL; }
 
-    const BigInteger& operator=(const BigInteger &n);
-
-    int size() const;
-    bool neg() const;
-    BigInteger abs() const;
-
-public: // public operators
     BigInteger operator-() const;
     friend BigInteger operator + (const BigInteger& a, const BigInteger& b);
     friend BigInteger operator - (const BigInteger& a, const BigInteger& b);
     friend BigInteger operator * (const BigInteger& a, const BigInteger& b);
-    friend BigInteger operator / (const BigInteger& a, const BigInteger& b);
     friend BigInteger operator % (const BigInteger& a, const BigInteger& b);
+    friend m_int operator % (const BigInteger& a, const m_int& b);
 
     friend bool operator < (const BigInteger& a, const BigInteger& b);
-    friend bool operator <= (const BigInteger& a, const BigInteger& b) { return !(b < a); }
-    friend bool operator > (const BigInteger& a, const BigInteger& b) { return b < a; }
-    friend bool operator >= (const BigInteger& a, const BigInteger& b){ return !(a < b); }
-    friend bool operator == (const BigInteger& a, const BigInteger& b) { return !(a < b) && !(b < a); }
-    friend bool operator != (const BigInteger& a, const BigInteger& b) { return (a < b) || (b < a); }
-
-    friend bool operator < (const BigInteger& a, const m_uint& b);
-    friend bool operator <= (const BigInteger& a, const m_uint &b) { return !(a > b); }
-    friend bool operator >  (const BigInteger& a, const m_uint &b);
-    friend bool operator >= (const BigInteger& a, const m_uint &b) { return !(a < b); }
-    friend bool operator == (const BigInteger& a, const m_uint &b) { return !(a < b) && !(a > b); }
-    friend bool operator != (const BigInteger& a, const m_uint &b) { return (a < b) || (a > b); }
-
+    friend bool operator == (const BigInteger& a, const BigInteger& b) { return !(a < b) && !(b < a);}
     friend ostream& operator << (ostream& out, const BigInteger& a);
-    friend BigInteger operator << (const BigInteger& a, const BigInteger::m_uint &b);
-    friend BigInteger operator >> (const BigInteger& a, const BigInteger::m_uint &b);
-    const BigInteger& operator <<=(const BigInteger::m_uint &b);
-    const BigInteger& operator >>=(const BigInteger::m_uint &b);
 
 public:
-    void random(const BigInteger& n, mt19937& mt); // random a int less than n
-    void random(int unit_n, mt19937& mt); // random a int with unit_n units
-    void random_prime(int unit_n, mt19937& mt); // random a prime with length no more than unit_n
+    static void load_prime();
+    void random(int bit_n, mt19937& mt); // random a number with bit_n bits
+    void random_prime(int bit_n, mt19937& mt); // random a prime with bit_n bits
+    void random(const BigInteger& n, mt19937& mt); // random a number less than n
+    bool miller_rabbin(int test_time, mt19937& mt); //miller rabbin test for prime
     static BigInteger binpow(const BigInteger& a, const BigInteger& b, const BigInteger& m);
-    static void load_prime(int unit_n);
-
+    static BigInteger ex_gcd(const BigInteger& a, const BigInteger& b, BigInteger& x, BigInteger& y);
+        
 private:
     void trim(); // cut leading zeros
-public:
-    bool miller_rabbin(int test_time, mt19937& mt); //miller rabbin test for prime
-
-    inline friend int greater_eq(const BigInteger& a, const BigInteger& b, int last_dg);
-    friend void div(const BigInteger& a, const BigInteger& b, BigInteger& c, BigInteger &d);
+    void left_shift(int unit_n);
 };
 
 #endif //RSA_BIGINTEGER_H
