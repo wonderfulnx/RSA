@@ -28,8 +28,6 @@ const int unit_num = max_bit_num * 4 / base_bits + 10;
  */
 class BigInteger {
 public:
-
-public:
     int len;
     bool is_neg;
     m_int* num;
