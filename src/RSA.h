@@ -20,12 +20,14 @@ private:
     BigInteger phi; // \phi(n)
 
 public:
-    RSA();
-    ~RSA();
-    void init(int n);
+    RSA(int bit_n, mt19937& mt);
+    ~RSA() {}
 
 public:
-    // BigInteger encr
+    BigInteger encrypt(const BigInteger& m);
+    BigInteger decrypt(const BigInteger& c);
+    BigInteger* encrypt_str(string& m);
+    string decrypt_str(const BigInteger *c, int length);
 };
 
 
