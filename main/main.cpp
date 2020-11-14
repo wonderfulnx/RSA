@@ -27,6 +27,17 @@ int main()
 	int final_end = clock();
 	cout << "time is : " << final_end - first_start << "ms" << endl;
 	cout << cnt << " of 1000 experiments exceeded 1000 ms." << endl;
+	
+	/*int start = clock();
+	RSA rsa(2048, mt);
+	cout << "time is : " << clock() - start << "ms" << endl;
+	string m = "this is RSA";
+	BigInteger* C = rsa.encrypt_str(m);
+	string res = rsa.decrypt_str(C, m.size());
+
+	cout << "origin string: " << m << endl;
+	cout << "decrypt string: " << res << endl;
+	delete[] C;*/
 
     return 0;
 }

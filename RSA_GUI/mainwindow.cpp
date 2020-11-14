@@ -66,14 +66,18 @@ void MainWindow::click_generate_keys() {
     int start_ts = clock();
     switch (ui->gen_level_choose->currentIndex()) {
     case 0:
-        this->bit_n = 768;
+        this->bit_n = 512;
         rsa = new RSA(bit_n, this->mt);
         break;
     case 1:
-        this->bit_n = 1024;
+        this->bit_n = 768;
         rsa = new RSA(bit_n, this->mt);
         break;
     case 2:
+        this->bit_n = 1024;
+        rsa = new RSA(bit_n, this->mt);
+        break;
+    case 3:
         this->bit_n = 2048;
         rsa = new RSA(bit_n, this->mt);
         break;
