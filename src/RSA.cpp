@@ -28,7 +28,7 @@ RSA::RSA(int bit_n, mt19937& mt) {
     if (!(t == One)) throw "GCD result is not 1!";
     d = ((d % phi) + phi) % phi;
 
-    cout << "key generation used " << clock() - start_ts << "ms" << endl;
+    // cout << "key generation used " << clock() - start_ts << "ms" << endl;
 }
 
 BigInteger RSA::encrypt(const BigInteger& m) {

@@ -27,7 +27,6 @@ int curr_quo_sup;
 BigInteger::BigInteger(m_int n) {
     is_neg = false;
     len = 0;
-    num = new m_int[unit_num];
     memset(num, 0, sizeof(m_int) * unit_num);
     while (n) { num[len] = n % base; n /= base; len++; }
     if (len == 0) len = 1;
@@ -36,7 +35,6 @@ BigInteger::BigInteger(m_int n) {
 BigInteger::BigInteger(const BigInteger &n) {
     is_neg = n.is_neg;
     len = n.len;
-    num = new m_int[unit_num];
     memcpy(num, n.num, sizeof(m_int) * unit_num);
 }
 
@@ -164,7 +162,6 @@ BigInteger operator % (const BigInteger& a, const BigInteger& b) {
         curr_quo_sup++;
     }
     res.is_neg = a.is_neg;
-    res.trim();
     return res;
 }
 
@@ -208,7 +205,6 @@ BigInteger BigInteger::binpow(const BigInteger &a, const BigInteger &b, const Bi
         // highest unit, no longer need to compute
         if (cur_unit == b.len - 1 && tmp > b.num[cur_unit]) break;
     }
-    res.trim();
     return res;
 }
 
@@ -335,8 +331,8 @@ void BigInteger::trim() {
     len = i + 1;
 
     // for debug
-    for (int j = 0; j < unit_num; j++) if (num[j] >= base) throw "Trim: a number exceeds LOW!";
-    if (len > unit_num) throw "Length of vector exceeded!";
+    // for (int j = 0; j < unit_num; j++) if (num[j] >= base) throw "Trim: a number exceeds LOW!";
+    // if (len > unit_num) throw "Length of vector exceeded!";
 }
 
 void BigInteger::left_shift(int unit_n) {

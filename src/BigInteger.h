@@ -3,6 +3,7 @@
 //
 
 #ifndef RSA_BIGINTEGER_H
+#pragma comment(linker, "/STACK:52428800")
 #define RSA_BIGINTEGER_H
 #include <iostream>
 #include <string>
@@ -15,7 +16,7 @@ typedef long long m_int;
 const int base_bits = 24;
 const int max_bit_num = 2048;
 const long long base = 1ll << base_bits;
-const int unit_num = max_bit_num * 4 / base_bits + 10;
+const int unit_num = max_bit_num * 4 * 2 / base_bits + 10;
 
 /*
  * Big Integer Class
@@ -30,14 +31,14 @@ class BigInteger {
 public:
     int len;
     bool is_neg;
-    m_int* num;
+    m_int num[unit_num];
 
 public: // basic functions
     BigInteger(m_int n = 0);
     BigInteger(const BigInteger& n);
     const BigInteger& operator=(m_int n);
     const BigInteger& operator=(const BigInteger& n);
-    ~BigInteger() { delete[] num; num = NULL; }
+    ~BigInteger() { }
 
     BigInteger operator-() const;
     friend BigInteger operator + (const BigInteger& a, const BigInteger& b);

@@ -15,7 +15,7 @@ public:
     BigInteger e, n; // Public Key
     BigInteger d; // Private Key
     BigInteger p, q; // Primes
-    BigInteger phi; // \phi(n)
+    BigInteger phi; // phi(n)
 
 public:
     RSA(int bit_n, mt19937& mt);
