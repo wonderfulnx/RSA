@@ -97,7 +97,10 @@ void MainWindow::click_encrypt() {
     // get text
     QString str = ui->m_textEdit->toPlainText();
     if (str == "" || rsa == NULL) return;
-    if (str.length() > 100) QMessageBox::information(NULL, "String too long!", "message string too long...", QMessageBox::Yes);
+    if (str.length() > 128) {
+        QMessageBox::information(NULL, "String too long!", "message string too long...", QMessageBox::Yes);
+        return;
+    }
     if (cipher) { delete[] cipher; }
 
     // encrypt
