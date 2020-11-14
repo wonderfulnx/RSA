@@ -6,6 +6,8 @@
 #include <fstream>
 #include <string>
 #include <random>
+#include <sstream>
+#include <iomanip>
 
 const int init_prime_num = 1229;
 long long primes[init_prime_num];
@@ -288,12 +290,28 @@ void BigInteger::random_prime(int bit_n, mt19937& mt) {
     }
 }
 
-void BigInteger::load_prime() {
+string BigInteger::to_hex(int length) {
+    string res;
+    int l = max(length, this->len);
+    stringstream ioss;
+
+    if (this->is_neg) ioss << '-';
+    ioss << hex;
+    for (int i = l - 1; i >= 0; i--) {
+        ioss.fill('0');
+        ioss.width(base_bits / 4);
+        ioss << this->num[i];
+    }
+    ioss >> res;
+    return res;
+}
+
+bool BigInteger::load_prime() {
     ifstream infile;
     infile.open("prime.txt");
     if (!infile) {
         cout << "Error: prime.txt does not exist!" << endl;
-        return;
+        return false;
     }
     m_int data;
     for (int i = 0; i < init_prime_num; i++) {
@@ -301,6 +319,7 @@ void BigInteger::load_prime() {
         primes[i] = data;
     }
     infile.close();
+    return true;
 }
 
 /*

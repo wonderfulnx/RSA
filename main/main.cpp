@@ -9,7 +9,7 @@ int main()
 {
     random_device rd;
     mt19937 mt(rd());
-    BigInteger::load_prime();
+    if (!BigInteger::load_prime()) return 0;
 
     /*RSA rsa(768, mt);
     BigInteger m(47324832);

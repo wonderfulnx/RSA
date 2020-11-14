@@ -49,9 +49,10 @@ public: // basic functions
     friend bool operator < (const BigInteger& a, const BigInteger& b);
     friend bool operator == (const BigInteger& a, const BigInteger& b) { return !(a < b) && !(b < a);}
     friend ostream& operator << (ostream& out, const BigInteger& a);
+    string to_hex(int length = 0);
 
 public:
-    static void load_prime();
+    static bool load_prime();
     void random(int bit_n, mt19937& mt); // random a number with bit_n bits
     void random_prime(int bit_n, mt19937& mt); // random a prime with bit_n bits
     void random(const BigInteger& n, mt19937& mt); // random a number less than n

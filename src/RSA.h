@@ -13,8 +13,6 @@
 class RSA {
 public:
     BigInteger e, n; // Public Key
-
-private:
     BigInteger d; // Private Key
     BigInteger p, q; // Primes
     BigInteger phi; // \phi(n)
@@ -26,7 +24,7 @@ public:
 public:
     BigInteger encrypt(const BigInteger& m);
     BigInteger decrypt(const BigInteger& c);
-    BigInteger* encrypt_str(string& m);
+    BigInteger* encrypt_str(const string& m);
     string decrypt_str(const BigInteger *c, int length);
 };
 

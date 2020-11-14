@@ -39,7 +39,7 @@ BigInteger RSA::decrypt(const BigInteger& c) {
     return BigInteger::binpow(c, d, n);
 }
 
-BigInteger* RSA::encrypt_str(string& m) {
+BigInteger* RSA::encrypt_str(const string& m) {
     int len = m.size();
     BigInteger* res = new BigInteger[len];
     for (int i = 0; i < len; i++) {

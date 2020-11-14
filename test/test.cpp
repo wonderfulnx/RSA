@@ -134,7 +134,7 @@ void test_ex_gcd() {
 
 int main()
 {
-    BigInteger::load_prime();
+    if (!BigInteger::load_prime()) return 0;
 
     //test_plus();
     //test_sub();
